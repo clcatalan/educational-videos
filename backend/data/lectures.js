@@ -6,7 +6,7 @@ const lectures = [
     instructor: "Dr. Sarah Johnson",
     duration: "2h 30m",
     category: "Mathematics",
-    thumbnail: "https://via.placeholder.com/400x225/4CAF50/ffffff?text=Calculus",
+    thumbnail: "https://placehold.co/400x225/4CAF50/ffffff?text=Calculus",
     videoUrl: "https://www.youtube.com/embed/WUvTyaaNkzM"
   },
   {
@@ -16,7 +16,7 @@ const lectures = [
     instructor: "Prof. Michael Chen",
     duration: "3h 15m",
     category: "Physics",
-    thumbnail: "https://via.placeholder.com/400x225/2196F3/ffffff?text=Quantum+Physics",
+    thumbnail: "https://placehold.co/400x225/2196F3/ffffff?text=Quantum+Physics",
     videoUrl: "https://www.youtube.com/embed/7kb1VT0J3DE"
   },
   {
@@ -26,7 +26,7 @@ const lectures = [
     instructor: "Dr. Emma Williams",
     duration: "2h 45m",
     category: "History",
-    thumbnail: "https://via.placeholder.com/400x225/FF9800/ffffff?text=Ancient+History",
+    thumbnail: "https://placehold.co/400x225/FF9800/ffffff?text=Ancient+History",
     videoUrl: "https://www.youtube.com/embed/xT7uY-1c5H8"
   },
   {
@@ -36,7 +36,7 @@ const lectures = [
     instructor: "Alex Rodriguez",
     duration: "4h 20m",
     category: "Programming",
-    thumbnail: "https://via.placeholder.com/400x225/FFC107/000000?text=JavaScript",
+    thumbnail: "https://placehold.co/400x225/FFC107/000000?text=JavaScript",
     videoUrl: "https://www.youtube.com/embed/NCwa_xi0Uuc"
   },
   {
@@ -46,7 +46,7 @@ const lectures = [
     instructor: "Dr. Robert Taylor",
     duration: "3h 0m",
     category: "Chemistry",
-    thumbnail: "https://via.placeholder.com/400x225/9C27B0/ffffff?text=Organic+Chemistry",
+    thumbnail: "https://placehold.co/400x225/9C27B0/ffffff?text=Organic+Chemistry",
     videoUrl: "https://www.youtube.com/embed/7E6QRnKYxoQ"
   },
   {
@@ -56,7 +56,7 @@ const lectures = [
     instructor: "Dr. Lisa Park",
     duration: "3h 45m",
     category: "Programming",
-    thumbnail: "https://via.placeholder.com/400x225/00BCD4/ffffff?text=Machine+Learning",
+    thumbnail: "https://placehold.co/400x225/00BCD4/ffffff?text=Machine+Learning",
     videoUrl: "https://www.youtube.com/embed/i_LwzRVP7bg"
   },
   {
@@ -66,7 +66,7 @@ const lectures = [
     instructor: "Prof. David Kim",
     duration: "2h 55m",
     category: "Mathematics",
-    thumbnail: "https://via.placeholder.com/400x225/4CAF50/ffffff?text=Linear+Algebra",
+    thumbnail: "https://placehold.co/400x225/4CAF50/ffffff?text=Linear+Algebra",
     videoUrl: "https://www.youtube.com/embed/fNk_zzaMoSs"
   },
   {
@@ -76,7 +76,7 @@ const lectures = [
     instructor: "Dr. Maria Garcia",
     duration: "2h 20m",
     category: "History",
-    thumbnail: "https://via.placeholder.com/400x225/FF9800/ffffff?text=Renaissance+Art",
+    thumbnail: "https://placehold.co/400x225/FF9800/ffffff?text=Renaissance+Art",
     videoUrl: "https://www.youtube.com/embed/KGZfvyH5KCk"
   }
 ];

@@ -266,6 +266,51 @@ body {
   height: 100%;
 }
 
+/* Audio Player Section */
+.audio-player-section {
+  padding: 1.5rem 2rem;
+  background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+  border-top: 1px solid #e0e0e0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.audio-player-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.audio-icon {
+  font-size: 1.5rem;
+}
+
+.audio-player-header h3 {
+  color: #333;
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.audio-subtitle {
+  color: #666;
+  font-size: 0.85rem;
+  font-style: italic;
+  margin-left: auto;
+}
+
+.audio-player {
+  width: 100%;
+  height: 40px;
+  outline: none;
+  border-radius: 8px;
+}
+
+.audio-player::-webkit-media-controls-panel {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 8px;
+}
+
 .lecture-details {
   padding: 2rem;
 }

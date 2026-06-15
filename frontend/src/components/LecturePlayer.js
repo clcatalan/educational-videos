@@ -57,6 +57,18 @@ function LecturePlayer() {
           ></iframe>
         </div>
         
+        <div className="audio-player-section">
+          <div className="audio-player-header">
+            <span className="audio-icon">🎵</span>
+            <h3>Background Music</h3>
+            <span className="audio-subtitle">Optional ambient music for your learning experience</span>
+          </div>
+          <audio controls className="audio-player">
+            <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg" />
+            Your browser does not support the audio element.
+          </audio>
+        </div>
+        
         <div className="lecture-details">
           <div className="lecture-header">
             <div>
