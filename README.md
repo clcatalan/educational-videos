@@ -21,6 +21,7 @@ A full-stack web application for browsing and watching educational lectures, bui
 **Backend:**
 - Node.js
 - Express.js
+- PostgreSQL (via `pg`)
 - CORS enabled
 
 ## Installation
@@ -28,6 +29,7 @@ A full-stack web application for browsing and watching educational lectures, bui
 ### Prerequisites
 - Node.js (v14 or higher)
 - npm
+- PostgreSQL
 
 ### Backend Setup
 
@@ -41,7 +43,19 @@ cd backend
 npm install
 ```
 
-3. Start the backend server:
+3. Create the database and configure the connection:
+```bash
+createdb tmr_lectures
+cp .env.example .env   # then edit DATABASE_URL if needed
+```
+
+4. Run the migration and seed the initial lecture data:
+```bash
+npm run db:migrate
+npm run db:seed
+```
+
+5. Start the backend server:
 ```bash
 npm start
 ```
@@ -80,8 +94,13 @@ tmr-project/
 ├── backend/
 │   ├── package.json
 │   ├── server.js
-│   └── data/
-│       └── lectures.js
+│   ├── .env.example
+│   ├── data/
+│   │   └── lectures.js
+│   └── db/
+│       ├── index.js
+│       ├── migrate.js
+│       └── seed.js
 ├── frontend/
 │   ├── package.json
 │   ├── public/
