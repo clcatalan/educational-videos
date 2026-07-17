@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import LearningCue from "./LearningCue";
+
 
 function LecturePlayer() {
   const { id } = useParams();
@@ -40,60 +42,88 @@ function LecturePlayer() {
     );
   }
 
-  return (
-    <div className="lecture-player-container">
-      <button className="back-button" onClick={() => navigate('/')}>
-        ← Back to Lectures
-      </button>
-      
-      <div className="player-content">
-        <div className="video-wrapper">
-          <iframe
-            src={lecture.videoUrl}
-            title={lecture.title}
-            frameBorder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          ></iframe>
+ return (
+  <div className="lecture-player-container">
+    <button className="back-button" onClick={() => navigate("/")}>
+      ← Back to Lectures
+    </button>
+
+    <div className="player-content">
+
+      {/* Video + Learning Cue */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          gap: "20px",
+          flexWrap: "wrap",
+          padding: "20px"
+        }}
+      >
+        <div style={{ flex: 1, minWidth: "600px" }}>
+          <div className="video-wrapper">
+            <iframe
+              src={lecture.videoUrl}
+              title={lecture.title}
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            ></iframe>
+          </div>
         </div>
-        
-        <div className="audio-player-section">
-          <div className="audio-player-header">
-            <span className="audio-icon">🎵</span>
-            <h3>Background Music</h3>
-            <span className="audio-subtitle">Optional ambient music for your learning experience</span>
-          </div>
-          <audio controls className="audio-player">
-            <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg" />
-            Your browser does not support the audio element.
-          </audio>
+
+        <LearningCue />
+      </div>
+
+      <div className="audio-player-section">
+        <div className="audio-player-header">
+          <span className="audio-icon">🎵</span>
+          <h3>Background Music</h3>
+          <span className="audio-subtitle">
+            Optional ambient music for your learning experience
+          </span>
         </div>
-        
-        <div className="lecture-details">
-          <div className="lecture-header">
-            <div>
-              <span className="category-badge">{lecture.category}</span>
-              <h1>{lecture.title}</h1>
-            </div>
-            <div className="duration-large">⏱️ {lecture.duration}</div>
+
+        <audio controls className="audio-player">
+          <source
+            src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
+            type="audio/mpeg"
+          />
+          Your browser does not support the audio element.
+        </audio>
+      </div>
+
+      <div className="lecture-details">
+        <div className="lecture-header">
+          <div>
+            <span className="category-badge">{lecture.category}</span>
+            <h1>{lecture.title}</h1>
           </div>
-          
-          <div className="instructor-info">
-            <span className="instructor-icon">👤</span>
-            <div>
-              <strong>Instructor</strong>
-              <p>{lecture.instructor}</p>
-            </div>
+
+          <div className="duration-large">
+            ⏱️ {lecture.duration}
           </div>
-          
-          <div className="description-section">
-            <h3>About this lecture</h3>
-            <p>{lecture.description}</p>
+        </div>
+
+        <div className="instructor-info">
+          <span className="instructor-icon">👤</span>
+
+          <div>
+            <strong>Instructor</strong>
+            <p>{lecture.instructor}</p>
           </div>
+        </div>
+
+        <div className="description-section">
+          <h3>About this lecture</h3>
+          <p>{lecture.description}</p>
         </div>
       </div>
+
     </div>
-  );
+  </div>
+);
 }
 
 export default LecturePlayer;

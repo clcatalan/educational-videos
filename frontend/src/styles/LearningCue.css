@@ -1,0 +1,60 @@
+.learning-cue {
+  width: 320px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.cue-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  cursor: pointer;
+  background: #f8fafc;
+  transition: 0.3s;
+}
+
+.cue-header:hover {
+  background: #eef2ff;
+}
+
+.cue-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: #333;
+}
+
+.cue-header p {
+  margin-top: 4px;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.arrow {
+  transition: transform 0.3s;
+  font-size: 0.9rem;
+}
+
+.arrow.open {
+  transform: rotate(180deg);
+}
+
+.playlist-dropdown {
+  border-top: 1px solid #ececec;
+}
+
+.playlist-item {
+  padding: 14px 20px;
+  cursor: pointer;
+  transition: 0.25s;
+  font-size: 0.95rem;
+}
+
+.playlist-item:hover {
+  background: #667eea;
+  color: white;
+}
+
