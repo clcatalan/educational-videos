@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import LectureCard from './LectureCard';
 
-function LectureList() {
+function LectureList({ preferredIds = [] }) {
   const [lectures, setLectures] = useState([]);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -39,11 +39,13 @@ function LectureList() {
     }
   };
 
-  const filteredLectures = lectures.filter(lecture =>
-    lecture.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    lecture.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    lecture.instructor.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredLectures = lectures
+    .filter(lecture => preferredIds.length === 0 || preferredIds.includes(lecture.id))
+    .filter(lecture =>
+      lecture.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lecture.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lecture.instructor.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
   return (
     <div className="lecture-list-container">
@@ -57,7 +59,7 @@ function LectureList() {
           />
         </div>
         
-        <div className="category-filters">
+        {/* <div className="category-filters">
           <button
             className={selectedCategory === 'all' ? 'active' : ''}
             onClick={() => setSelectedCategory('all')}
@@ -73,7 +75,7 @@ function LectureList() {
               {category}
             </button>
           ))}
-        </div>
+        </div> */}
       </div>
 
       {loading ? (
