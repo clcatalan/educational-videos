@@ -8,8 +8,10 @@ function App() {
     <Router>
       <div className="App">
         <header className="app-header">
-          <h1>Educational Lecture Platform</h1>
-          <p>Expand your knowledge with expert-led courses</p>
+          <h1 className="hero-title">Educational Lecture Platform</h1>
+          <p className="hero-subtitle">
+            Expand your knowledge with expert-led courses
+           </p>
         </header>
         <Routes>
           <Route path="/" element={<LectureList />} />
