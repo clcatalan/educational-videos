@@ -8,7 +8,7 @@ function App() {
     <Router>
       <div className="App">
         <header className="app-header">
-          <h1>📚 Educational Lecture Platform</h1>
+          <h1>Educational Lecture Platform</h1>
           <p>Expand your knowledge with expert-led courses</p>
         </header>
         <Routes>
