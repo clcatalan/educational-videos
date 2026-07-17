@@ -1,17 +1,17 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "../styles/LearningCue.css";
 
-const playlists = [
-  "Deep Focus",
-  "Peaceful Piano",
-  "Lo-Fi Beats",
-  "Brain Food",
-  "Instrumental Study"
-];
-
 function LearningCue() {
-  const [selectedPlaylist, setSelectedPlaylist] = useState("Select Playlist");
+  const [playlists, setPlaylists] = useState([]);
+  const [selectedPlaylist, setSelectedPlaylist] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/playlists")
+      .then((res) => res.json())
+      .then((data) => setPlaylists(data))
+      .catch((err) => console.error(err));
+  }, []);
 
   const handleSelect = (playlist) => {
     setSelectedPlaylist(playlist);
@@ -26,7 +26,12 @@ function LearningCue() {
       >
         <div>
           <h3>🎵 Learning Cue</h3>
-          <p>{selectedPlaylist}</p>
+
+          <p>
+            {selectedPlaylist
+              ? selectedPlaylist.name
+              : "Select Playlist"}
+          </p>
         </div>
 
         <span className={`arrow ${isOpen ? "open" : ""}`}>
@@ -38,13 +43,25 @@ function LearningCue() {
         <div className="playlist-dropdown">
           {playlists.map((playlist) => (
             <div
-              key={playlist}
+              key={playlist.id}
               className="playlist-item"
               onClick={() => handleSelect(playlist)}
             >
-              {playlist}
+              {playlist.name}
             </div>
           ))}
+        </div>
+      )}
+
+      {selectedPlaylist && (
+        <div className="spotify-link">
+          <a
+            href={selectedPlaylist.url}
+            target="_blank"
+            rel="noreferrer"
+          >
+            🎧 Open in Spotify
+          </a>
         </div>
       )}
     </div>
@@ -52,4 +69,3 @@ function LearningCue() {
 }
 
 export default LearningCue;
-

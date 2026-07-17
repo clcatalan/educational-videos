@@ -1,4 +1,5 @@
 require('dotenv').config();
+const playlistRoutes = require("./routes/playlists");
 const express = require('express');
 const cors = require('cors');
 const db = require('./db');
@@ -72,3 +73,7 @@ app.get('/api/categories', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
+
+
+app.use("/api/playlists", playlistRoutes);
+
