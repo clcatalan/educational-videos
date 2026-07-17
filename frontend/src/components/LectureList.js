@@ -51,7 +51,7 @@ function LectureList() {
         <div className="search-bar">
           <input
             type="text"
-            placeholder="🔍 Search lectures..."
+            placeholder="Search lectures..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
