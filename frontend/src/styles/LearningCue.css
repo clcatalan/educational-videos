@@ -60,22 +60,29 @@
 
 .spotify-link {
   margin-top: 15px;
-  text-align: center;
+  display: flex;
+  justify-content: center;
 }
 
-.spotify-link a {
+.spotify-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   text-decoration: none;
+  background: #18a54c;
   color: white;
-  background: #1DB954;
   padding: 10px 18px;
-  border-radius: 10px;
+  border-radius: 12px;
   font-weight: 600;
-  display: inline-block;
-  transition: 0.3s;
+  transition: all 0.25s ease;
 }
 
-.spotify-link a:hover {
+.spotify-button:hover {
+  background: #0d8138;
   transform: translateY(-2px);
-  background: #18a54c;
+}
+
+.spotify-icon {
+  font-size: 1.2rem;
 }
 

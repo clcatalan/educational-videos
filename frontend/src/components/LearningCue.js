@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { FaSpotify } from "react-icons/fa";
 import "../styles/LearningCue.css";
 
 function LearningCue() {
@@ -59,8 +60,10 @@ function LearningCue() {
             href={selectedPlaylist.url}
             target="_blank"
             rel="noreferrer"
+            className="spotify-button"
           >
-            🎧 Open in Spotify
+            <FaSpotify className="spotify-icon" />
+            <span>Open in Spotify</span>
           </a>
         </div>
       )}
