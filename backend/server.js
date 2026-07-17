@@ -1,10 +1,12 @@
 require('dotenv').config();
+const playlistRoutes = require("./routes/playlists");
 const express = require('express');
 const cors = require('cors');
 const db = require('./db');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
+const assignmentRoutes = require("./routes/assignments");
 
 // Middleware
 app.use(cors());
@@ -69,6 +71,14 @@ app.get('/api/categories', async (req, res) => {
   }
 });
 
+app.use("/api/playlists", playlistRoutes);
+app.use("/api/assignments", assignmentRoutes);
+
+
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
+
+
+
+
