@@ -37,13 +37,13 @@ body {
   align-self: flex-end;
   margin-bottom: 1rem;
   padding: 10px 18px;
-  border: 2px solid #667eea;
+  border: 2px solid hsl(229, 72%, 46%);
   background: white;
   color: #667eea;
   border-radius: 20px;
   cursor: pointer;
   font-size: 0.9rem;
-  font-weight: 500;
+  font-weight: 550;
   transition: all 0.3s;
 }
 
