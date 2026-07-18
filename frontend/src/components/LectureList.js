@@ -49,7 +49,15 @@ function LectureList({ preferredIds = [] }) {
 
   return (
     <div className="lecture-list-container">
-      <div className="filters-section">
+      <div className="search-bar">
+          <input
+            type="text"
+            placeholder="Search lectures..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+      {/* <div className="filters-section">
         <div className="search-bar">
           <input
             type="text"
@@ -59,7 +67,7 @@ function LectureList({ preferredIds = [] }) {
           />
         </div>
         
-        {/* <div className="category-filters">
+        <div className="category-filters">
           <button
             className={selectedCategory === 'all' ? 'active' : ''}
             onClick={() => setSelectedCategory('all')}
@@ -75,8 +83,8 @@ function LectureList({ preferredIds = [] }) {
               {category}
             </button>
           ))}
-        </div> */}
-      </div>
+        </div>
+      </div> */}
 
       {loading ? (
         <div className="loading">Loading lectures...</div>

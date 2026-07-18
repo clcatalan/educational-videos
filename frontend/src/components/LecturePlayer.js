@@ -51,17 +51,8 @@ function LecturePlayer() {
     <div className="player-content">
 
       {/* Video + Learning Cue */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          gap: "20px",
-          flexWrap: "wrap",
-          padding: "20px"
-        }}
-      >
-        <div style={{ flex: 1, minWidth: "600px" }}>
+      <div className="player-media-row">
+        <div className="video-column">
           <div className="video-wrapper">
             <iframe
               src={lecture.videoUrl}
