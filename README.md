@@ -81,11 +81,36 @@ npm start
 
 The frontend will run on `http://localhost:3000` and automatically open in your browser.
 
+### Admin Setup
+
+A separate app for researchers to review participant preferences and watch history, sharing the same backend and Postgres database as the participant frontend.
+
+1. Open a new terminal and navigate to the admin directory:
+```bash
+cd admin
+```
+
+2. Install dependencies:
+```bash
+npm install
+```
+
+3. Start the React development server:
+```bash
+npm start
+```
+
+The admin app will run on `http://localhost:3001`. Log in with a username that has `is_admin = true` in the `users` table (the migration seeds one by default: `admin`).
+
 ## API Endpoints
 
 - `GET /api/lectures` - Get all lectures (supports `?category=` query parameter)
 - `GET /api/lectures/:id` - Get a specific lecture by ID
 - `GET /api/categories` - Get all available categories
+- `POST /api/auth/login` / `POST /api/auth/register` - Username-based login/registration
+- `PUT /api/users/:id/preferences` - Save a user's lecture preferences
+- `POST /api/users/:id/watched` - Record that a user watched a lecture
+- `GET /api/admin/users` - List all users with preferences and watch history (requires `x-user-id` header of an admin user)
 
 ## Project Structure
 

@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import LearningCue from "./LearningCue";
+import { useAuth } from '../context/AuthContext';
 
 
 function LecturePlayer() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const [lecture, setLecture] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -23,6 +25,12 @@ function LecturePlayer() {
       const data = await response.json();
       setLecture(data);
       setLoading(false);
+
+      fetch(`/api/users/${currentUser.id}/watched`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lectureId: data.id }),
+      }).catch(error => console.error('Error recording watched lecture:', error));
     } catch (error) {
       console.error('Error fetching lecture:', error);
       setLoading(false);

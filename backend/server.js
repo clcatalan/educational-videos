@@ -7,6 +7,9 @@ const db = require('./db');
 const app = express();
 const PORT = process.env.PORT || 5001;
 const assignmentRoutes = require("./routes/assignments");
+const authRoutes = require("./routes/auth");
+const userRoutes = require("./routes/users");
+const adminRoutes = require("./routes/admin");
 
 // Middleware
 app.use(cors());
@@ -73,6 +76,9 @@ app.get('/api/categories', async (req, res) => {
 
 app.use("/api/playlists", playlistRoutes);
 app.use("/api/assignments", assignmentRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/admin", adminRoutes);
 
 
 app.listen(PORT, () => {

@@ -1,16 +1,12 @@
 import React, { useState, useEffect } from 'react';
 
-const STORAGE_KEY = 'lecturePreferences';
-
-function PreferencesDialog({ onClose, onSave }) {
+function PreferencesDialog({ onClose, onSave, initialSelectedIds = [], forced = false }) {
   const [lectures, setLectures] = useState([]);
-  const [selectedIds, setSelectedIds] = useState([]);
+  const [selectedIds, setSelectedIds] = useState(initialSelectedIds);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    setSelectedIds(stored ? JSON.parse(stored) : []);
-
     fetch('/api/lectures')
       .then(response => response.json())
       .then(data => {
@@ -29,20 +25,29 @@ function PreferencesDialog({ onClose, onSave }) {
     );
   };
 
-  const handleSave = () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(selectedIds));
-    onSave(selectedIds);
-    onClose();
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await onSave(selectedIds);
+    } finally {
+      setSaving(false);
+    }
   };
 
+  const dismiss = forced ? undefined : onClose;
+
   return (
-    <div className="dialog-overlay" onClick={onClose}>
+    <div className="dialog-overlay" onClick={dismiss}>
       <div className="dialog-box" onClick={(e) => e.stopPropagation()}>
         <div className="dialog-header">
           <h2>Set Preferences</h2>
-          <button className="dialog-close" onClick={onClose}>✕</button>
+          {!forced && <button className="dialog-close" onClick={onClose}>✕</button>}
         </div>
-        <p className="dialog-subtitle">Which of the following topics are you not familiar in?</p>
+        <p className="dialog-subtitle">
+          {forced
+            ? 'Welcome! select the following topics you are not familiar in to help us recommend lectures for you.'
+            : 'Which of the following topics are you not familiar in?'}
+        </p>
 
         {loading ? (
           <div className="loading">Loading lectures...</div>
@@ -64,8 +69,10 @@ function PreferencesDialog({ onClose, onSave }) {
         )}
 
         <div className="dialog-actions">
-          <button className="dialog-cancel" onClick={onClose}>Cancel</button>
-          <button className="dialog-save" onClick={handleSave}>Save Preferences</button>
+          {!forced && <button className="dialog-cancel" onClick={onClose}>Cancel</button>}
+          <button className="dialog-save" onClick={handleSave} disabled={saving || (forced && selectedIds.length === 0)}>
+            {saving ? 'Saving...' : 'Save Preferences'}
+          </button>
         </div>
       </div>
     </div>
