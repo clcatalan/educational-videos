@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import "../styles/LearningCue.css";
 
@@ -32,34 +31,36 @@ function LearningCue({ lectureId }) {
 
   useEffect(() => {
     loadAssignments();
-  }, []);
+  }, [lectureId]);
 
-async function loadAssignments() {
-  try {
-    const res = await fetch("http://localhost:5001/api/assignments");
-    const data = await res.json();
+  async function loadAssignments() {
+    try {
+      const res = await fetch("http://localhost:5001/api/assignments");
+      const data = await res.json();
 
-    setAssignments(data);
+      setAssignments(data);
 
-    // Find the playlist assigned to this lecture
-    const current = data.find(
-      a => Number(a.lecture_id) === Number(lectureId)
-    );
-
-    if (current) {
-      const playlist = playlists.find(
-        p => p.id === current.playlist_id
+      // Find playlist assigned to this lecture
+      const current = data.find(
+        a => Number(a.lecture_id) === Number(lectureId)
       );
 
-      if (playlist) {
-        setSelectedPlaylist(playlist);
-      }
-    }
+      if (current) {
+        const playlist = playlists.find(
+          p => p.id === current.playlist_id
+        );
 
-  } catch (err) {
-    console.error(err);
+        if (playlist) {
+          setSelectedPlaylist(playlist);
+        }
+      } else {
+        setSelectedPlaylist(null);
+      }
+
+    } catch (err) {
+      console.error(err);
+    }
   }
-}
 
   async function assignPlaylist(playlist) {
     try {
@@ -106,39 +107,34 @@ async function loadAssignments() {
               ? selectedPlaylist.name
               : "Select Playlist"}
           </p>
-
         </div>
 
         <span className={`arrow ${isOpen ? "open" : ""}`}>
           ▼
         </span>
-
       </div>
 
       {isOpen && (
-
         <div className="playlist-dropdown">
 
           {playlists.map((playlist) => {
 
-  const assigned = assignments.find(
-    a =>
-      a.playlist_id === playlist.id &&
-      Number(a.lecture_id) !== Number(lectureId)
-  );
+            const assigned = assignments.find(
+              a =>
+                a.playlist_id === playlist.id &&
+                Number(a.lecture_id) !== Number(lectureId)
+            );
 
-  const selected =
-    selectedPlaylist &&
-    selectedPlaylist.id === playlist.id;
+            const selected =
+              selectedPlaylist &&
+              selectedPlaylist.id === playlist.id;
 
-  return (
-    <div
-      key={playlist.id}
-      className={`playlist-item ${
-        assigned ? "disabled" : ""
-      } ${selected ? "selected" : ""}`}
-
-
+            return (
+              <div
+                key={playlist.id}
+                className={`playlist-item ${
+                  assigned ? "disabled" : ""
+                } ${selected ? "selected" : ""}`}
                 onClick={() => {
                   if (!assigned) {
                     assignPlaylist(playlist);
@@ -153,18 +149,33 @@ async function loadAssignments() {
 
                 {assigned && (
                   <span className="assigned-text">
-                     (Assigned)
+                    Assigned
                   </span>
                 )}
 
               </div>
-
             );
-
           })}
 
         </div>
+      )}
 
+      {/* Spotify Embed */}
+      {selectedPlaylist && (
+        <iframe
+          src={`https://open.spotify.com/embed/playlist/${selectedPlaylist.id}`}
+          width="100%"
+          height="152"
+          frameBorder="0"
+          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+          loading="lazy"
+          style={{
+            border: "none",
+            borderRadius: "12px",
+            marginTop: "15px"
+          }}
+          title="Spotify Playlist"
+        />
       )}
 
     </div>
@@ -172,3 +183,4 @@ async function loadAssignments() {
 }
 
 export default LearningCue;
+
