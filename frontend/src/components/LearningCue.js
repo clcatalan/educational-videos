@@ -1,26 +1,99 @@
-import React, { useState, useEffect } from "react";
-import { FaSpotify } from "react-icons/fa";
+
+import React, { useEffect, useState } from "react";
 import "../styles/LearningCue.css";
 
-function LearningCue() {
-  const [playlists, setPlaylists] = useState([]);
+const playlists = [
+  {
+    id: "14KtkIpsvzDSCXR24EqHCL",
+    name: "Deep Focus"
+  },
+  {
+    id: "2ODMZHnO9zcajVJ54Rlhz7",
+    name: "Lo-Fi Study"
+  },
+  {
+    id: "1T4YBOdnXTVtkQaVguaAUq",
+    name: "Peaceful Piano"
+  },
+  {
+    id: "0vvXsWCC9xrXsKd4FyS8kM",
+    name: "Brain Food"
+  },
+  {
+    id: "5Ob9EjYpTvbmNGxhdQe5JM",
+    name: "Instrumental Focus"
+  }
+];
+
+function LearningCue({ lectureId }) {
   const [selectedPlaylist, setSelectedPlaylist] = useState(null);
+  const [assignments, setAssignments] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    fetch("/api/playlists")
-      .then((res) => res.json())
-      .then((data) => setPlaylists(data))
-      .catch((err) => console.error(err));
+    loadAssignments();
   }, []);
 
-  const handleSelect = (playlist) => {
-    setSelectedPlaylist(playlist);
-    setIsOpen(false);
-  };
+async function loadAssignments() {
+  try {
+    const res = await fetch("http://localhost:5001/api/assignments");
+    const data = await res.json();
+
+    setAssignments(data);
+
+    // Find the playlist assigned to this lecture
+    const current = data.find(
+      a => Number(a.lecture_id) === Number(lectureId)
+    );
+
+    if (current) {
+      const playlist = playlists.find(
+        p => p.id === current.playlist_id
+      );
+
+      if (playlist) {
+        setSelectedPlaylist(playlist);
+      }
+    }
+
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+  async function assignPlaylist(playlist) {
+    try {
+      const res = await fetch("http://localhost:5001/api/assignments", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          lectureId,
+          playlistId: playlist.id
+        })
+      });
+
+      const result = await res.json();
+
+      if (!result.success) {
+        alert(result.message);
+        return;
+      }
+
+      setSelectedPlaylist(playlist);
+      setIsOpen(false);
+
+      loadAssignments();
+
+    } catch (err) {
+      console.error(err);
+    }
+  }
 
   return (
     <div className="learning-cue">
+
       <div
         className="cue-header"
         onClick={() => setIsOpen(!isOpen)}
@@ -33,40 +106,67 @@ function LearningCue() {
               ? selectedPlaylist.name
               : "Select Playlist"}
           </p>
+
         </div>
 
         <span className={`arrow ${isOpen ? "open" : ""}`}>
           ▼
         </span>
+
       </div>
 
       {isOpen && (
+
         <div className="playlist-dropdown">
-          {playlists.map((playlist) => (
-            <div
-              key={playlist.id}
-              className="playlist-item"
-              onClick={() => handleSelect(playlist)}
-            >
-              {playlist.name}
-            </div>
-          ))}
+
+          {playlists.map((playlist) => {
+
+  const assigned = assignments.find(
+    a =>
+      a.playlist_id === playlist.id &&
+      Number(a.lecture_id) !== Number(lectureId)
+  );
+
+  const selected =
+    selectedPlaylist &&
+    selectedPlaylist.id === playlist.id;
+
+  return (
+    <div
+      key={playlist.id}
+      className={`playlist-item ${
+        assigned ? "disabled" : ""
+      } ${selected ? "selected" : ""}`}
+
+
+                onClick={() => {
+                  if (!assigned) {
+                    assignPlaylist(playlist);
+                  }
+                }}
+              >
+
+                <span>
+                  {selected && "✓ "}
+                  {playlist.name}
+                </span>
+
+                {assigned && (
+                  <span className="assigned-text">
+                     (Assigned)
+                  </span>
+                )}
+
+              </div>
+
+            );
+
+          })}
+
         </div>
+
       )}
 
-      {selectedPlaylist && (
-        <div className="spotify-link">
-          <a
-            href={selectedPlaylist.url}
-            target="_blank"
-            rel="noreferrer"
-            className="spotify-button"
-          >
-            <FaSpotify className="spotify-icon" />
-            <span>Open in Spotify</span>
-          </a>
-        </div>
-      )}
     </div>
   );
 }

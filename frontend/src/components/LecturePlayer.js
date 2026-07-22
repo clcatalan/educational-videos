@@ -72,7 +72,7 @@ function LecturePlayer() {
           </div>
         </div>
 
-        <LearningCue />
+        <LearningCue lectureId={lecture.id} />
       </div>
 
       <div className="audio-player-section">
