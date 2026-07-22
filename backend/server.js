@@ -76,6 +76,7 @@ app.get('/api/categories', async (req, res) => {
 
 app.use("/api/playlists", playlistRoutes);
 app.use("/api/assignments", assignmentRoutes);
+console.log("Assignments route loaded");
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/admin", adminRoutes);
