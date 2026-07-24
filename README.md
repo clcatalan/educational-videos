@@ -102,6 +102,39 @@ npm start
 
 The admin app will run on `http://localhost:3001`. Log in with a username that has `is_admin = true` in the `users` table (the migration seeds one by default: `admin`).
 
+
+
+## Mobile App (Sleep Cue)
+
+The Sleep Cue mobile application is a companion app for participants in the Educational Videos study. It provides a mobile interface for accessing lectures, listening to recommended Spotify playlists, and supporting the sleep cue intervention. The app communicates with the same Express backend and PostgreSQL database used by the web application.
+
+### 1. Navigate to the mobile directory
+
+```bash
+cd mobile
+```
+
+### 2. Install dependencies
+
+```bash
+npm install
+```
+
+### 3. Start the Expo development server
+
+```bash
+npx expo start
+```
+
+### 4. Launch the app
+
+- Scan the QR code using the **Expo Go** app.
+- Or press **a** for Android, **w** for web, or **i** for iOS (macOS only).
+- Copy paste the link (Web: http://localhost:8081) on browser
+
+The app connects to the existing backend APIs, so ensure the backend server is running before using the mobile application.
+
+
 ## API Endpoints
 
 - `GET /api/lectures` - Get all lectures (supports `?category=` query parameter)
