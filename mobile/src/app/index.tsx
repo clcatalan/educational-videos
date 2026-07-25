@@ -1,26 +1,33 @@
+import { useState } from "react";
+import SleepStart from "../components/SleepStart";
 import { View, Text } from "react-native";
 
 export default function Home() {
-  return (
-    <View
+  const [started, setStarted] = useState(false);
+
+  if (!started) {
+    return <SleepStart onStart={() => setStarted(true)} />;
+  }
+
+return (
+  <View
+    style={{
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: "#8DA5F6",
+    }}
+  >
+    <Text
       style={{
-        flex: 1,
-        backgroundColor: "#0F172A",
-        justifyContent: "center",
-        alignItems: "center",
+        fontSize: 28,
+        fontWeight: "700",
+        color: "black",
       }}
     >
-      <Text
-        style={{
-          color: "white",
-          fontSize: 30,
-          fontWeight: "700",
-        }}
-      >
-        Sleep Cue
-      </Text>
-    </View>
-  );
+      Monitoring Sleep...
+    </Text>
+  </View>
+);
 }
-
 
