@@ -1,31 +1,9 @@
 import React, { useEffect, useState } from "react";
 import "../styles/LearningCue.css";
-
-const playlists = [
-  {
-    id: "14KtkIpsvzDSCXR24EqHCL",
-    name: "Deep Focus"
-  },
-  {
-    id: "2ODMZHnO9zcajVJ54Rlhz7",
-    name: "Lo-Fi Study"
-  },
-  {
-    id: "1T4YBOdnXTVtkQaVguaAUq",
-    name: "Peaceful Piano"
-  },
-  {
-    id: "0vvXsWCC9xrXsKd4FyS8kM",
-    name: "Brain Food"
-  },
-  {
-    id: "5Ob9EjYpTvbmNGxhdQe5JM",
-    name: "Instrumental Focus"
-  }
-];
+import lectureMusic from "../data/lectureMusic";
 
 function LearningCue({ lectureId }) {
-  const [selectedPlaylist, setSelectedPlaylist] = useState(null);
+  const [selectedMusic, setSelectedMusic] = useState(null);
   const [assignments, setAssignments] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -40,39 +18,34 @@ function LearningCue({ lectureId }) {
 
       setAssignments(data);
 
-      // Find playlist assigned to this lecture
       const current = data.find(
-        a => Number(a.lecture_id) === Number(lectureId)
+        (a) => Number(a.lecture_id) === Number(lectureId)
       );
 
       if (current) {
-        const playlist = playlists.find(
-          p => p.id === current.playlist_id
-        );
-
-        if (playlist) {
-          setSelectedPlaylist(playlist);
-        }
+        setSelectedMusic({
+          id: current.playlist_id,
+          ...lectureMusic[lectureId],
+        });
       } else {
-        setSelectedPlaylist(null);
+        setSelectedMusic(null);
       }
-
     } catch (err) {
       console.error(err);
     }
   }
 
-  async function assignPlaylist(playlist) {
+  async function assignMusic(musicId) {
     try {
       const res = await fetch("http://localhost:5001/api/assignments", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           lectureId,
-          playlistId: playlist.id
-        })
+          playlistId: musicId,
+        }),
       });
 
       const result = await res.json();
@@ -82,11 +55,8 @@ function LearningCue({ lectureId }) {
         return;
       }
 
-      setSelectedPlaylist(playlist);
-      setIsOpen(false);
-
       loadAssignments();
-
+      setIsOpen(false);
     } catch (err) {
       console.error(err);
     }
@@ -103,9 +73,9 @@ function LearningCue({ lectureId }) {
           <h3>🎵 Learning Cue</h3>
 
           <p>
-            {selectedPlaylist
-              ? selectedPlaylist.name
-              : "Select Playlist"}
+            {selectedMusic
+              ? selectedMusic.title
+              : "Select Background Music"}
           </p>
         </div>
 
@@ -117,65 +87,45 @@ function LearningCue({ lectureId }) {
       {isOpen && (
         <div className="playlist-dropdown">
 
-          {playlists.map((playlist) => {
+          {Object.entries(lectureMusic).map(([musicId, music]) => {
 
             const assigned = assignments.find(
-              a =>
-                a.playlist_id === playlist.id &&
+              (a) =>
+                Number(a.playlist_id) === Number(musicId) &&
                 Number(a.lecture_id) !== Number(lectureId)
             );
 
             const selected =
-              selectedPlaylist &&
-              selectedPlaylist.id === playlist.id;
+              selectedMusic &&
+              Number(selectedMusic.id) === Number(musicId);
 
             return (
               <div
-                key={playlist.id}
+                key={musicId}
                 className={`playlist-item ${
                   assigned ? "disabled" : ""
                 } ${selected ? "selected" : ""}`}
                 onClick={() => {
                   if (!assigned) {
-                    assignPlaylist(playlist);
+                    assignMusic(musicId);
                   }
                 }}
               >
-
                 <span>
                   {selected && "✓ "}
-                  {playlist.name}
+                  {music.title}
                 </span>
 
                 {assigned && (
                   <span className="assigned-text">
-                     (Assigned)
+                    (Assigned)
                   </span>
                 )}
-
               </div>
             );
           })}
 
         </div>
-      )}
-
-      {/* Spotify Embed */}
-      {selectedPlaylist && (
-        <iframe
-          src={`https://open.spotify.com/embed/playlist/${selectedPlaylist.id}`}
-          width="100%"
-          height="152"
-          frameBorder="0"
-          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-          loading="lazy"
-          style={{
-            border: "none",
-            borderRadius: "12px",
-            marginTop: "15px"
-          }}
-          title="Spotify Playlist"
-        />
       )}
 
     </div>
