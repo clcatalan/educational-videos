@@ -120,7 +120,7 @@ function LearningCue({ lectureId }) {
 
                 {assigned && (
                   <span className="assigned-text">
-                    (Assigned)
+                    - (Assigned)
                   </span>
                 )}
               </div>
