@@ -23,10 +23,11 @@ function LearningCue({ lectureId }) {
       );
 
       if (current) {
-        setSelectedMusic({
-          id: current.playlist_id,
-          ...lectureMusic[lectureId],
-        });
+        const music = lectureMusic.find(
+          (m) => m.id === current.playlist_id
+        );
+
+        setSelectedMusic(music || null);
       } else {
         setSelectedMusic(null);
       }
@@ -44,7 +45,7 @@ function LearningCue({ lectureId }) {
         },
         body: JSON.stringify({
           lectureId,
-          playlistId: musicId,
+          playlistId: musicId, // keep backend field name
         }),
       });
 
@@ -57,6 +58,7 @@ function LearningCue({ lectureId }) {
 
       loadAssignments();
       setIsOpen(false);
+      
     } catch (err) {
       console.error(err);
     }
@@ -74,7 +76,7 @@ function LearningCue({ lectureId }) {
 
           <p>
             {selectedMusic
-              ? selectedMusic.title
+              ? selectedMusic.name
               : "Select Background Music"}
           </p>
         </div>
@@ -87,33 +89,33 @@ function LearningCue({ lectureId }) {
       {isOpen && (
         <div className="playlist-dropdown">
 
-          {Object.entries(lectureMusic).map(([musicId, music]) => {
+          {lectureMusic.map((music) => {
 
             const assigned = assignments.find(
               (a) =>
-                Number(a.playlist_id) === Number(musicId) &&
+                a.playlist_id === music.id &&
                 Number(a.lecture_id) !== Number(lectureId)
             );
 
             const selected =
               selectedMusic &&
-              Number(selectedMusic.id) === Number(musicId);
+              selectedMusic.id === music.id;
 
             return (
               <div
-                key={musicId}
+                key={music.id}
                 className={`playlist-item ${
                   assigned ? "disabled" : ""
                 } ${selected ? "selected" : ""}`}
                 onClick={() => {
                   if (!assigned) {
-                    assignMusic(musicId);
+                    assignMusic(music.id);
                   }
                 }}
               >
                 <span>
                   {selected && "✓ "}
-                  {music.title}
+                  {music.name}
                 </span>
 
                 {assigned && (
