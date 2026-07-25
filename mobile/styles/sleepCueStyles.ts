@@ -13,7 +13,7 @@ export const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "700",
     marginBottom: 60,
-    color: "#222",
+    color: "#f7f7f7",
   },
 
   circleButton: {
@@ -24,20 +24,20 @@ export const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
-    borderColor: "#444",
+    borderColor: "#fdf6f6",
   },
 
   buttonText: {
     marginTop: 26,
-    fontSize: 16,
+    fontSize: 26,
     textAlign: "center",
-    color: "#060000",
+    color: "#fbf5f5",
   },
 
   subtitle: {
     marginTop: 25,
-    fontSize: 18,
-    color: "#232121",
+    fontSize: 26,
+    color: "#fefefe",
   },
 
   icon: {
