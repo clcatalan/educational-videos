@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import "../styles/LearningCue.css";
 import lectureMusic from "../data/lectureMusic";
 
-function LearningCue({ lectureId }) {
+function LearningCue({ lectureId, onMusicChanged }) {
   const [selectedMusic, setSelectedMusic] = useState(null);
   const [assignments, setAssignments] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -28,8 +28,17 @@ function LearningCue({ lectureId }) {
         );
 
         setSelectedMusic(music || null);
+
+        // Tell LecturePlayer immediately
+        if (music && onMusicChanged) {
+          onMusicChanged(music);
+        }
       } else {
         setSelectedMusic(null);
+
+        if (onMusicChanged) {
+          onMusicChanged(null);
+        }
       }
     } catch (err) {
       console.error(err);
@@ -45,7 +54,7 @@ function LearningCue({ lectureId }) {
         },
         body: JSON.stringify({
           lectureId,
-          playlistId: musicId, // keep backend field name
+          playlistId: musicId,
         }),
       });
 
@@ -56,9 +65,19 @@ function LearningCue({ lectureId }) {
         return;
       }
 
-      loadAssignments();
+      // Update UI immediately
+      const music = lectureMusic.find((m) => m.id === musicId);
+
+      setSelectedMusic(music);
+
+      if (onMusicChanged) {
+        onMusicChanged(music);
+      }
+
+      await loadAssignments();
+
       setIsOpen(false);
-      
+
     } catch (err) {
       console.error(err);
     }
@@ -117,13 +136,8 @@ function LearningCue({ lectureId }) {
                   {selected && "✓ "}
                   {music.name}
                 </span>
-
-                {assigned && (
-                  <span className="assigned-text">
-                    - (Assigned)
-                  </span>
-                )}
               </div>
+              
             );
           })}
 

@@ -39,6 +39,8 @@ function LectureList({ preferredIds = [] }) {
     }
   };
 
+
+  
   const filteredLectures = lectures
     .filter(lecture => preferredIds.length === 0 || preferredIds.includes(lecture.id))
     .filter(lecture =>

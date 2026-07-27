@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import LearningCue from "./LearningCue";
+import YouTubePlayer from "./YouTubePlayer";
 import { useAuth } from "../context/AuthContext";
 import lectureMusic from "../data/lectureMusic";
-
 
 function LecturePlayer() {
   const { id } = useParams();
@@ -13,6 +13,10 @@ function LecturePlayer() {
   const [lecture, setLecture] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // undefined = still loading assignment
+  // null = no assignment
+  const [assignedMusic, setAssignedMusic] = useState(undefined);
+
   const audioRef = useRef(null);
 
   useEffect(() => {
@@ -20,11 +24,36 @@ function LecturePlayer() {
   }, [id]);
 
   useEffect(() => {
-    if (lecture && audioRef.current) {
-      audioRef.current.play().catch(() => {
-        console.log("Autoplay blocked by browser.");
-      });
+    if (!lecture) return;
+
+    async function loadAssignedMusic() {
+      try {
+        const res = await fetch("http://localhost:5001/api/assignments");
+        const assignments = await res.json();
+
+        const assignment = assignments.find(
+          (a) => Number(a.lecture_id) === Number(lecture.id)
+        );
+
+        if (!assignment) {
+          setAssignedMusic(null);
+          return;
+        }
+
+        const music = lectureMusic.find(
+          (m) => m.id === assignment.playlist_id
+        );
+
+        setAssignedMusic(music || null);
+
+      } catch (err) {
+        console.error(err);
+        setAssignedMusic(null);
+      }
     }
+
+    loadAssignedMusic();
+
   }, [lecture]);
 
   const fetchLecture = async () => {
@@ -50,11 +79,12 @@ function LecturePlayer() {
         body: JSON.stringify({
           lectureId: data.id,
         }),
-      }).catch((error) =>
-        console.error("Error recording watched lecture:", error)
+      }).catch((err) =>
+        console.error("Error recording watched lecture:", err)
       );
-    } catch (error) {
-      console.error(error);
+
+    } catch (err) {
+      console.error(err);
       setLoading(false);
     }
   };
@@ -67,6 +97,7 @@ function LecturePlayer() {
     return (
       <div className="error-container">
         <h2>Lecture not found</h2>
+
         <button onClick={() => navigate("/")}>
           Back to Lectures
         </button>
@@ -74,7 +105,11 @@ function LecturePlayer() {
     );
   }
 
-  const music = lectureMusic[lecture.id];
+  const music =
+    assignedMusic === undefined
+      ? null
+      : assignedMusic ||
+        lectureMusic[(lecture.id - 1) % lectureMusic.length];
 
   return (
     <div className="lecture-player-container">
@@ -93,18 +128,32 @@ function LecturePlayer() {
           <div className="video-column">
 
             <div className="video-wrapper">
-              <iframe
-                src={lecture.videoUrl}
-                title={lecture.title}
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
+
+              <YouTubePlayer
+                videoUrl={lecture.videoUrl}
+
+                onPlay={() => {
+                  audioRef.current?.play();
+                }}
+
+                onPause={() => {
+                  audioRef.current?.pause();
+                }}
+
+                onEnd={() => {
+                  audioRef.current?.pause();
+                  audioRef.current.currentTime = 0;
+                }}
               />
+
             </div>
 
           </div>
 
-          <LearningCue lectureId={lecture.id} />
+          <LearningCue
+            lectureId={lecture.id}
+            onMusicChanged={setAssignedMusic}
+          />
 
         </div>
 
@@ -112,13 +161,17 @@ function LecturePlayer() {
           <div className="audio-player-section">
 
             <div className="audio-player-header">
-              <span className="audio-icon">🎵</span>
+
+              <span className="audio-icon">
+                🎵
+              </span>
 
               <h3>Background Music</h3>
 
               <span className="audio-subtitle">
-                {music.title}
+                {music.name}
               </span>
+
             </div>
 
             <audio
@@ -131,7 +184,9 @@ function LecturePlayer() {
                 src={music.file}
                 type="audio/mpeg"
               />
+
               Your browser does not support the audio element.
+
             </audio>
 
           </div>
@@ -142,11 +197,13 @@ function LecturePlayer() {
           <div className="lecture-header">
 
             <div>
+
               <span className="category-badge">
                 {lecture.category}
               </span>
 
               <h1>{lecture.title}</h1>
+
             </div>
 
             <div className="duration-large">
@@ -162,8 +219,11 @@ function LecturePlayer() {
             </span>
 
             <div>
+
               <strong>Instructor</strong>
+
               <p>{lecture.instructor}</p>
+
             </div>
 
           </div>
