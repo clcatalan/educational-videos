@@ -65,7 +65,7 @@ export default function Home() {
     <View
       style={{
         flex: 1,
-        backgroundColor: "#8DA5F6",
+        backgroundColor: "#8989ec",
         justifyContent: "center",
         alignItems: "center",
       }}
