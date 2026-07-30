@@ -111,7 +111,7 @@ The Sleep Cue mobile application is a companion app for participants in the Educ
 ### 1. Navigate to the mobile directory
 
 ```bash
-cd mobile
+cd mobile-android
 ```
 
 ### 2. Install dependencies
