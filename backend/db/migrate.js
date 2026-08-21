@@ -40,6 +40,38 @@ async function migrate() {
   `);
 
   await db.query(`
+    CREATE TABLE IF NOT EXISTS quizzes (
+      id SERIAL PRIMARY KEY,
+      lecture_id INTEGER NOT NULL UNIQUE REFERENCES lectures(id) ON DELETE CASCADE,
+      link TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await db.query(`ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS link TEXT`);
+
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS quiz_questions (
+      id SERIAL PRIMARY KEY,
+      quiz_id INTEGER NOT NULL REFERENCES quizzes(id) ON DELETE CASCADE,
+      prompt TEXT NOT NULL,
+      position INTEGER NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS quiz_question_options (
+      id SERIAL PRIMARY KEY,
+      question_id INTEGER NOT NULL REFERENCES quiz_questions(id) ON DELETE CASCADE,
+      option_text TEXT NOT NULL,
+      is_correct BOOLEAN NOT NULL DEFAULT false,
+      position INTEGER NOT NULL
+    )
+  `);
+
+  await db.query(`
     INSERT INTO users (username) VALUES ('P01')
     ON CONFLICT (username) DO NOTHING
   `);

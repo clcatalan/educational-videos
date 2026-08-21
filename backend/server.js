@@ -63,6 +63,22 @@ app.get('/api/lectures/:id', async (req, res) => {
   }
 });
 
+// Check whether a lecture has an associated quiz
+app.get('/api/lectures/:id/quiz', async (req, res) => {
+  try {
+    const result = await db.query('SELECT * FROM quizzes WHERE lecture_id = $1', [req.params.id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'No quiz for this lecture' });
+    }
+
+    res.json({ id: result.rows[0].id, lectureId: result.rows[0].lecture_id, link: result.rows[0].link });
+  } catch (error) {
+    console.error('Error fetching quiz:', error);
+    res.status(500).json({ message: 'Failed to fetch quiz' });
+  }
+});
+
 // Get all categories
 app.get('/api/categories', async (req, res) => {
   try {

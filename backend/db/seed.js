@@ -3,7 +3,7 @@ const db = require('./index');
 const lectures = require('../data/lectures');
 
 async function seed() {
-  await db.query('TRUNCATE lectures RESTART IDENTITY');
+  await db.query('TRUNCATE lectures RESTART IDENTITY CASCADE');
 
   for (const lecture of lectures) {
     await db.query(

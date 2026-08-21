@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(lsof -i :5001 -sTCP:LISTEN -Pn -t)",
+      "Bash(lsof -i :3001 -sTCP:LISTEN -Pn -t)",
+      "Bash(curl -s http://localhost:5001/api/admin/quizzes -H \"x-user-id: 2\" -w \"\\\\nHTTP %{http_code}\\\\n\")",
+      "Bash(node -e ' *)",
+      "Bash(curl -s http://localhost:5001/api/admin/quizzes -H \"x-user-id: 5\" -w \"\\\\nHTTP %{http_code}\\\\n\")",
+      "Bash(curl -s -X PUT http://localhost:5001/api/admin/quizzes/1 -H \"x-user-id: 5\" -H \"Content-Type: application/json\" -d '{\"link\":\"https://forms.gle/example\"}' -w \"\\\\nHTTP %{http_code}\\\\n\")",
+      "Bash(curl -s http://localhost:5001/api/admin/quizzes -H \"x-user-id: 5\")",
+      "Bash(curl -s http://localhost:5001/api/admin/quizzes/1 -H \"x-user-id: 5\")",
+      "Bash(curl -s -X PUT http://localhost:5001/api/admin/quizzes/1 -H \"x-user-id: 5\" -H \"Content-Type: application/json\" -d '{\"link\":\"https://forms.gle/test-quiz-link\"}' -w \"\\\\nHTTP %{http_code}\\\\n\")",
+      "Bash(curl -s http://localhost:5001/api/lectures/1/quiz -w \"\\\\nHTTP %{http_code}\\\\n\")"
+    ]
+  }
+}

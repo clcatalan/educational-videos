@@ -1,8 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import LearningCue from "./LearningCue";
+import QuizConfirmDialog from "./QuizConfirmDialog";
 import { useAuth } from '../context/AuthContext';
+import { loadYouTubeIframeApi } from '../utils/loadYouTubeIframeApi';
 
+function extractVideoId(videoUrl) {
+  return videoUrl.split('/').pop().split('?')[0];
+}
 
 function LecturePlayer() {
   const { id } = useParams();
@@ -10,10 +15,40 @@ function LecturePlayer() {
   const { currentUser } = useAuth();
   const [lecture, setLecture] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showQuizDialog, setShowQuizDialog] = useState(false);
+  const playerRef = useRef(null);
+  const playerContainerRef = useRef(null);
 
   useEffect(() => {
     fetchLecture();
   }, [id]);
+
+  useEffect(() => {
+    if (!lecture) return;
+    let cancelled = false;
+
+    loadYouTubeIframeApi().then((YT) => {
+      if (cancelled || !playerContainerRef.current) return;
+      playerRef.current = new YT.Player(playerContainerRef.current, {
+        videoId: extractVideoId(lecture.videoUrl),
+        events: {
+          onStateChange: (event) => {
+            if (event.data === YT.PlayerState.ENDED) {
+              setShowQuizDialog(true);
+            }
+          },
+        },
+      });
+    });
+
+    return () => {
+      cancelled = true;
+      if (playerRef.current && playerRef.current.destroy) {
+        playerRef.current.destroy();
+        playerRef.current = null;
+      }
+    };
+  }, [lecture?.id]);
 
   const fetchLecture = async () => {
     try {
@@ -31,6 +66,11 @@ function LecturePlayer() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ lectureId: data.id }),
       }).catch(error => console.error('Error recording watched lecture:', error));
+
+      fetch(`/api/lectures/${data.id}/quiz`)
+        .then(res => (res.ok ? res.json() : null))
+        .then(quiz => setLecture(prev => ({ ...prev, quizLink: quiz?.link ?? null })))
+        .catch(() => {});
     } catch (error) {
       console.error('Error fetching lecture:', error);
       setLoading(false);
@@ -62,13 +102,7 @@ function LecturePlayer() {
       <div className="player-media-row">
         <div className="video-column">
           <div className="video-wrapper">
-            <iframe
-              src={lecture.videoUrl}
-              title={lecture.title}
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            ></iframe>
+            <div id="yt-player" key={lecture.id} ref={playerContainerRef} />
           </div>
         </div>
 
@@ -121,6 +155,14 @@ function LecturePlayer() {
       </div>
 
     </div>
+
+    {showQuizDialog && (
+      <QuizConfirmDialog
+        quizLink={lecture.quizLink}
+        onConfirm={() => navigate(`/lecture/${id}/quiz`)}
+        onDecline={() => setShowQuizDialog(false)}
+      />
+    )}
   </div>
 );
 }

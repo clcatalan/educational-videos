@@ -68,4 +68,71 @@ router.get("/users", requireAdmin, async (req, res) => {
   }
 });
 
+/*
+Summary of quiz-link status per lecture, for the admin quiz picker.
+Lectures with no quizzes row at all are simply absent from this list;
+the admin frontend treats absence as "no link" after joining against
+GET /api/lectures.
+*/
+router.get("/quizzes", requireAdmin, async (req, res) => {
+  try {
+    const result = await db.query(`SELECT lecture_id, link FROM quizzes`);
+
+    res.json(result.rows.map(row => ({
+      lectureId: row.lecture_id,
+      link: row.link,
+    })));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to fetch quizzes" });
+  }
+});
+
+/*
+The current quiz link for one lecture, for pre-filling the "add quiz
+link" modal.
+*/
+router.get("/quizzes/:lectureId", requireAdmin, async (req, res) => {
+  try {
+    const { lectureId } = req.params;
+    const result = await db.query("SELECT link FROM quizzes WHERE lecture_id = $1", [lectureId]);
+    res.json({ lectureId: Number(lectureId), link: result.rows[0]?.link ?? null });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to fetch quiz" });
+  }
+});
+
+/*
+Saves the quiz link for a lecture. Creates the parent quizzes row on
+first save.
+*/
+router.put("/quizzes/:lectureId", requireAdmin, async (req, res) => {
+  const { lectureId } = req.params;
+  const { link } = req.body;
+
+  if (!link || !link.trim()) {
+    return res.status(400).json({ message: "A quiz link is required" });
+  }
+
+  try {
+    const lectureResult = await db.query("SELECT id FROM lectures WHERE id = $1", [lectureId]);
+    if (lectureResult.rows.length === 0) {
+      return res.status(404).json({ message: "Lecture not found" });
+    }
+
+    const result = await db.query(
+      `INSERT INTO quizzes (lecture_id, link) VALUES ($1, $2)
+       ON CONFLICT (lecture_id) DO UPDATE SET link = $2, updated_at = NOW()
+       RETURNING link`,
+      [lectureId, link.trim()]
+    );
+
+    res.json({ lectureId: Number(lectureId), link: result.rows[0].link });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to save quiz" });
+  }
+});
+
 module.exports = router;
