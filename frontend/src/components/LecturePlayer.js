@@ -3,14 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import LearningCue from "./LearningCue";
 import QuizConfirmDialog from "./QuizConfirmDialog";
 import { useAuth } from '../context/AuthContext';
-import { loadYouTubeIframeApi } from '../utils/loadYouTubeIframeApi';
 import YouTubePlayer from "./YouTubePlayer";
-import { useAuth } from "../context/AuthContext";
 import lectureMusic from "../data/lectureMusic";
-
-function extractVideoId(videoUrl) {
-  return videoUrl.split('/').pop().split('?')[0];
-}
 
 function LecturePlayer() {
   const { id } = useParams();
@@ -20,8 +14,6 @@ function LecturePlayer() {
   const [lecture, setLecture] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showQuizDialog, setShowQuizDialog] = useState(false);
-  const playerRef = useRef(null);
-  const playerContainerRef = useRef(null);
 
   // undefined = still loading assignment
   // null = no assignment
@@ -32,63 +24,6 @@ function LecturePlayer() {
   useEffect(() => {
     fetchLecture();
   }, [id]);
-
-  useEffect(() => {
-    if (!lecture) return;
-    let cancelled = false;
-
-    loadYouTubeIframeApi().then((YT) => {
-      if (cancelled || !playerContainerRef.current) return;
-      playerRef.current = new YT.Player(playerContainerRef.current, {
-        videoId: extractVideoId(lecture.videoUrl),
-        events: {
-          onStateChange: (event) => {
-            if (event.data === YT.PlayerState.ENDED) {
-              setShowQuizDialog(true);
-            }
-          },
-        },
-      });
-    });
-
-    return () => {
-      cancelled = true;
-      if (playerRef.current && playerRef.current.destroy) {
-        playerRef.current.destroy();
-        playerRef.current = null;
-      }
-    };
-  }, [lecture?.id]);
-
-    async function loadAssignedMusic() {
-      try {
-        const res = await fetch("http://localhost:5001/api/assignments");
-        const assignments = await res.json();
-
-        const assignment = assignments.find(
-          (a) => Number(a.lecture_id) === Number(lecture.id)
-        );
-
-        if (!assignment) {
-          setAssignedMusic(null);
-          return;
-        }
-
-        const music = lectureMusic.find(
-          (m) => m.id === assignment.playlist_id
-        );
-
-        setAssignedMusic(music || null);
-
-      } catch (err) {
-        console.error(err);
-        setAssignedMusic(null);
-      }
-    }
-
-    loadAssignedMusic();
-
-  }, [lecture]);
 
   const fetchLecture = async () => {
     try {
@@ -106,29 +41,15 @@ function LecturePlayer() {
       setLoading(false);
 
       fetch(`/api/users/${currentUser.id}/watched`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ lectureId: data.id }),
-      }).catch(error => console.error('Error recording watched lecture:', error));
+      }).catch((err) => console.error("Error recording watched lecture:", err));
 
       fetch(`/api/lectures/${data.id}/quiz`)
-        .then(res => (res.ok ? res.json() : null))
-        .then(quiz => setLecture(prev => ({ ...prev, quizLink: quiz?.link ?? null })))
+        .then((res) => (res.ok ? res.json() : null))
+        .then((quiz) => setLecture((prev) => ({ ...prev, quizLink: quiz?.link ?? null })))
         .catch(() => {});
-    } catch (error) {
-      console.error('Error fetching lecture:', error);
-
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          lectureId: data.id,
-        }),
-      }).catch((err) =>
-        console.error("Error recording watched lecture:", err)
-      );
-
     } catch (err) {
       console.error(err);
       setLoading(false);
@@ -169,43 +90,33 @@ function LecturePlayer() {
 
       <div className="player-content">
 
+        {/* Video + Learning Cue */}
         <div className="player-media-row">
-
           <div className="video-column">
-
             <div className="video-wrapper">
-
               <YouTubePlayer
                 videoUrl={lecture.videoUrl}
-
                 onPlay={() => {
                   audioRef.current?.play();
                 }}
-
                 onPause={() => {
                   audioRef.current?.pause();
                 }}
-
                 onEnd={() => {
-                  audioRef.current?.pause();
-                  audioRef.current.currentTime = 0;
+                  if (audioRef.current) {
+                    audioRef.current.pause();
+                    audioRef.current.currentTime = 0;
+                  }
+                  setShowQuizDialog(true);
                 }}
               />
-
             </div>
-
-      {/* Video + Learning Cue */}
-      <div className="player-media-row">
-        <div className="video-column">
-          <div className="video-wrapper">
-            <div id="yt-player" key={lecture.id} ref={playerContainerRef} />
           </div>
 
           <LearningCue
             lectureId={lecture.id}
             onMusicChanged={setAssignedMusic}
           />
-
         </div>
 
         {music && (
@@ -291,18 +202,15 @@ function LecturePlayer() {
 
       </div>
 
+      {showQuizDialog && (
+        <QuizConfirmDialog
+          quizLink={lecture.quizLink}
+          onConfirm={() => navigate(`/lecture/${id}/quiz`)}
+          onDecline={() => setShowQuizDialog(false)}
+        />
+      )}
     </div>
-
-    {showQuizDialog && (
-      <QuizConfirmDialog
-        quizLink={lecture.quizLink}
-        onConfirm={() => navigate(`/lecture/${id}/quiz`)}
-        onDecline={() => setShowQuizDialog(false)}
-      />
-    )}
-  </div>
-);
+  );
 }
 
 export default LecturePlayer;
-
