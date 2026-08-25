@@ -1,6 +1,7 @@
 package ai.asleep.asleep_sdk_android_sampleapp.ui.main
 
 import ai.asleep.asleep_sdk_android_sampleapp.R
+import ai.asleep.asleep_sdk_android_sampleapp.service.TmrMonitoringService
 import ai.asleep.asleep_sdk_android_sampleapp.ui.Constants
 import ai.asleep.asleep_sdk_android_sampleapp.ui.Constants.MIN_TRACKING_MINUTES
 import ai.asleep.asleep_sdk_android_sampleapp.utils.AsleepError
@@ -12,6 +13,8 @@ import ai.asleep.asleepsdk.Asleep
 import ai.asleep.asleepsdk.data.AsleepConfig
 import ai.asleep.asleepsdk.data.Session
 import android.app.Application
+import android.content.Intent
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -43,6 +46,7 @@ class AsleepViewModel @Inject constructor(
     private val asleepTrackingListener = object: Asleep.AsleepTrackingListener {
         override fun onStart(sessionId: String) {
             _asleepState.value = AsleepState.STATE_TRACKING_STARTED
+            startTmrMonitoring()
         }
 
         override fun onPerform(sequence: Int) {
@@ -53,6 +57,7 @@ class AsleepViewModel @Inject constructor(
         }
 
         override fun onFinish(sessionId: String?) {
+            stopTmrMonitoring()
             _sessionId.value = sessionId
 
             if (asleepState.value is AsleepState.STATE_ERROR) {
@@ -154,6 +159,7 @@ class AsleepViewModel @Inject constructor(
         if (Asleep.isSleepTrackingAlive(applicationContext)) {
             _asleepState.value = AsleepState.STATE_TRACKING_STOPPING
             Asleep.endSleepTracking()
+            stopTmrMonitoring()
         }
     }
 
@@ -161,6 +167,21 @@ class AsleepViewModel @Inject constructor(
         Asleep.connectSleepTracking(asleepTrackingListener)
         _asleepUserId.value = PreferenceHelper.getAsleepUserId(applicationContext)
         _asleepState.value = AsleepState.STATE_TRACKING_STARTED
+        startTmrMonitoring()
+    }
+
+    private fun startTmrMonitoring() {
+        val intent = Intent(applicationContext, TmrMonitoringService::class.java).apply {
+            action = TmrMonitoringService.ACTION_START
+        }
+        ContextCompat.startForegroundService(applicationContext, intent)
+    }
+
+    private fun stopTmrMonitoring() {
+        val intent = Intent(applicationContext, TmrMonitoringService::class.java).apply {
+            action = TmrMonitoringService.ACTION_STOP
+        }
+        ContextCompat.startForegroundService(applicationContext, intent)
     }
 
     private fun getCurrentSleepData(seq: Int) {
