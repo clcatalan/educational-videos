@@ -4,7 +4,6 @@ import LearningCue from "./LearningCue";
 import QuizConfirmDialog from "./QuizConfirmDialog";
 import { useAuth } from '../context/AuthContext';
 import YouTubePlayer from "./YouTubePlayer";
-import lectureMusic from "../data/lectureMusic";
 
 function LecturePlayer() {
   const { id } = useParams();
@@ -40,12 +39,6 @@ function LecturePlayer() {
       setLecture(data);
       setLoading(false);
 
-      fetch(`/api/users/${currentUser.id}/watched`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lectureId: data.id }),
-      }).catch((err) => console.error("Error recording watched lecture:", err));
-
       fetch(`/api/lectures/${data.id}/quiz`)
         .then((res) => (res.ok ? res.json() : null))
         .then((quiz) => setLecture((prev) => ({ ...prev, quizLink: quiz?.link ?? null })))
@@ -72,11 +65,7 @@ function LecturePlayer() {
     );
   }
 
-  const music =
-    assignedMusic === undefined
-      ? null
-      : assignedMusic ||
-        lectureMusic[(lecture.id - 1) % lectureMusic.length];
+  const music = assignedMusic || null;
 
   return (
     <div className="lecture-player-container">
@@ -107,6 +96,17 @@ function LecturePlayer() {
                     audioRef.current.pause();
                     audioRef.current.currentTime = 0;
                   }
+                  fetch(`/api/users/${currentUser.id}/watched`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ lectureId: lecture.id }),
+                  })
+                    .then((response) => {
+                      if (!response.ok) {
+                        throw new Error("Failed to record watched lecture");
+                      }
+                    })
+                    .catch((err) => console.error("Error recording watched lecture:", err));
                   setShowQuizDialog(true);
                 }}
               />

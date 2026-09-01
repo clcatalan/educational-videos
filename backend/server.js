@@ -2,6 +2,7 @@ require('dotenv').config();
 const playlistRoutes = require("./routes/playlists");
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const db = require('./db');
 
 const app = express();
@@ -14,6 +15,10 @@ const adminRoutes = require("./routes/admin");
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use('/study-audio', express.static(
+  path.resolve(__dirname, '../frontend/public/audio'),
+  { dotfiles: 'deny', fallthrough: false, index: false }
+));
 
 const toLecture = row => ({
   id: row.id,

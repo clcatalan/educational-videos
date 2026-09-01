@@ -7,6 +7,7 @@ plugins {
 
 Properties properties = new Properties()
 properties.load(project.rootProject.file('local.properties').newDataInputStream())
+def studyApiBaseUrl = properties.getProperty('study_api_base_url', 'http://10.0.2.2:5001')
 
 android {
     namespace 'ai.asleep.asleep_sdk_android_sampleapp'
@@ -23,6 +24,7 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
         buildConfigField "String", "ASLEEP_API_KEY", properties['asleep_api_key']
+        buildConfigField "String", "STUDY_API_BASE_URL", "\"${studyApiBaseUrl}\""
     }
 
     buildTypes {

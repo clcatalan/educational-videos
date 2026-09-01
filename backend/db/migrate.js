@@ -1,5 +1,6 @@
 require('dotenv').config();
 const db = require('./index');
+const { lectureCueAssignments } = require('../data/learningCues');
 
 async function migrate() {
   await db.query(`
@@ -22,6 +23,7 @@ async function migrate() {
       preferred_lecture_ids INTEGER[] NOT NULL DEFAULT '{}',
       preferences_set BOOLEAN NOT NULL DEFAULT false,
       is_admin BOOLEAN NOT NULL DEFAULT false,
+      study_group TEXT CHECK (study_group IN ('TMR', 'CONTROL')),
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
@@ -29,6 +31,23 @@ async function migrate() {
   await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS preferred_lecture_ids INTEGER[] NOT NULL DEFAULT '{}'`);
   await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS preferences_set BOOLEAN NOT NULL DEFAULT false`);
   await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN NOT NULL DEFAULT false`);
+  await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS study_group TEXT`);
+  await db.query(`
+    DO $$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conname = 'users_study_group_check'
+          AND conrelid = 'users'::regclass
+      ) THEN
+        ALTER TABLE users
+          ADD CONSTRAINT users_study_group_check
+          CHECK (study_group IN ('TMR', 'CONTROL'));
+      END IF;
+    END
+    $$
+  `);
 
   await db.query(`
     CREATE TABLE IF NOT EXISTS watched_lectures (
@@ -38,6 +57,42 @@ async function migrate() {
       PRIMARY KEY (user_id, lecture_id)
     )
   `);
+
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS lecture_playlist (
+      lecture_id INTEGER PRIMARY KEY REFERENCES lectures(id) ON DELETE CASCADE,
+      playlist_id TEXT NOT NULL,
+      assigned_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await db.query(`ALTER TABLE lecture_playlist ADD COLUMN IF NOT EXISTS assigned_at TIMESTAMPTZ DEFAULT NOW()`);
+  await db.query(`
+    DO $$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conname = 'lecture_playlist_lecture_id_fkey'
+          AND conrelid = 'lecture_playlist'::regclass
+      ) THEN
+        ALTER TABLE lecture_playlist
+          ADD CONSTRAINT lecture_playlist_lecture_id_fkey
+          FOREIGN KEY (lecture_id) REFERENCES lectures(id) ON DELETE CASCADE
+          NOT VALID;
+      END IF;
+    END
+    $$
+  `);
+
+  for (const assignment of lectureCueAssignments) {
+    await db.query(
+      `INSERT INTO lecture_playlist (lecture_id, playlist_id)
+       SELECT id, $2 FROM lectures WHERE id = $1
+       ON CONFLICT (lecture_id) DO UPDATE SET playlist_id = EXCLUDED.playlist_id`,
+      [assignment.lectureId, assignment.cueId]
+    );
+  }
 
   await db.query(`
     CREATE TABLE IF NOT EXISTS quizzes (

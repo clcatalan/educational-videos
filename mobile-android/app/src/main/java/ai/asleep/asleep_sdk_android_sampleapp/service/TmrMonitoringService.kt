@@ -25,6 +25,9 @@ class TmrMonitoringService : Service() {
     private var cueTriggeredForCurrentN3Episode = false
     private var requestInFlight = false
     private var isMonitoring = false
+    private var studyGroup: String? = null
+    private var cueId: String? = null
+    private var cueUrl: String? = null
 
     private val pollRunnable = object : Runnable {
         override fun run() {
@@ -41,7 +44,23 @@ class TmrMonitoringService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
-            ACTION_START -> startMonitoring()
+            ACTION_START -> {
+                studyGroup = intent.getStringExtra(EXTRA_STUDY_GROUP)
+                cueId = intent.getStringExtra(EXTRA_CUE_ID)
+                cueUrl = intent.getStringExtra(EXTRA_CUE_URL)
+                val cueUrlPresent = !cueUrl.isNullOrBlank()
+                Log.i(
+                    TAG,
+                    "TMR configuration received: group=$studyGroup, cueId=$cueId, cueUrlPresent=$cueUrlPresent"
+                )
+                if (!isTmrCueConfigured()) {
+                    Log.w(
+                        TAG,
+                        "TMR playback disabled: group must be TMR and cue URL must be present"
+                    )
+                }
+                startMonitoring()
+            }
             ACTION_STOP -> stopSelf()
             else -> stopSelf()
         }
@@ -101,7 +120,17 @@ class TmrMonitoringService : Service() {
             if (consecutiveN3Detections >= REQUIRED_N3_DETECTIONS &&
                 !cueTriggeredForCurrentN3Episode
             ) {
-                audioPlayer.playCue()
+                val selectedCueUrl = cueUrl
+                if (isTmrCueConfigured() && selectedCueUrl != null) {
+                    Log.i(TAG, "Stable Deep/N3 detected; triggering TMR cue $cueId")
+                    audioPlayer.playCue(selectedCueUrl)
+                } else {
+                    val cueUrlPresent = !selectedCueUrl.isNullOrBlank()
+                    Log.w(
+                        TAG,
+                        "Stable Deep/N3 detected; skipping TMR playback: group=$studyGroup, cueId=$cueId, cueUrlPresent=$cueUrlPresent"
+                    )
+                }
                 cueTriggeredForCurrentN3Episode = true
             }
             return
@@ -113,6 +142,9 @@ class TmrMonitoringService : Service() {
             audioPlayer.stopCue()
         }
     }
+
+    private fun isTmrCueConfigured(): Boolean =
+        studyGroup == STUDY_GROUP_TMR && !cueUrl.isNullOrBlank()
 
     private fun createNotification() = NotificationCompat.Builder(this, CHANNEL_ID)
         .setSmallIcon(R.mipmap.ic_sampleapp)
@@ -146,6 +178,12 @@ class TmrMonitoringService : Service() {
             "ai.asleep.asleep_sdk_android_sampleapp.action.START_TMR_MONITORING"
         const val ACTION_STOP =
             "ai.asleep.asleep_sdk_android_sampleapp.action.STOP_TMR_MONITORING"
+        const val EXTRA_STUDY_GROUP =
+            "ai.asleep.asleep_sdk_android_sampleapp.extra.STUDY_GROUP"
+        const val EXTRA_CUE_ID =
+            "ai.asleep.asleep_sdk_android_sampleapp.extra.CUE_ID"
+        const val EXTRA_CUE_URL =
+            "ai.asleep.asleep_sdk_android_sampleapp.extra.CUE_URL"
 
         // Debug builds only: set to true temporarily to trigger the cue on service start.
         private const val DEBUG_SIMULATE_DEEP_SLEEP = false
@@ -158,5 +196,6 @@ class TmrMonitoringService : Service() {
         const val STAGE_WAKE = 0
         const val STAGE_LIGHT = 1
         const val STAGE_DEEP = 2
+        private const val STUDY_GROUP_TMR = "TMR"
     }
 }

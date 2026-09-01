@@ -7,8 +7,8 @@ import androidx.media3.exoplayer.ExoPlayer
 class TmrAudioPlayer(context: Context) {
     private val player = ExoPlayer.Builder(context.applicationContext).build()
 
-    fun playCue() {
-        player.setMediaItem(MediaItem.fromUri(CUE_ASSET_URI))
+    fun playCue(cueUrl: String) {
+        player.setMediaItem(MediaItem.fromUri(cueUrl))
         player.prepare()
         player.play()
     }
@@ -20,9 +20,5 @@ class TmrAudioPlayer(context: Context) {
 
     fun release() {
         player.release()
-    }
-
-    private companion object {
-        const val CUE_ASSET_URI = "asset:///test_cue.mp3"
     }
 }

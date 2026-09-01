@@ -11,6 +11,17 @@
     <string name="button_text_stop_tracking">Stop Tracking</string>
     <string name="button_text_view_report">View Report</string>
 
+    <string name="study_login_title">Sleep Study</string>
+    <string name="study_login_instructions">Enter the same participant username or code that you used on the educational videos website.</string>
+    <string name="participant_username_hint">Participant username/code</string>
+    <string name="continue_button">Continue</string>
+    <string name="latest_watched_lecture">Latest watched lecture</string>
+    <string name="post_video_quiz_question">Have you completed the post-video quiz?</string>
+    <string name="no_open_quiz">No — open quiz</string>
+    <string name="yes_quiz_completed">Yes — continue to sleep setup</string>
+    <string name="missing_quiz_url">No post-video quiz link is configured for this lecture. Please contact the study team.</string>
+    <string name="participant_username_required">Enter your participant username/code.</string>
+
     <string name="report_subtitle_sleep_stages">Sleep Stages</string>
     <string name="report_subtitle_snoring_stages">Snoring Stages</string>
     <string name="report_label_snoring_ratio">Snoring Ratio:</string>

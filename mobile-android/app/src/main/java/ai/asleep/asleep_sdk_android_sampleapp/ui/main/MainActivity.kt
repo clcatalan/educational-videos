@@ -3,6 +3,8 @@ package ai.asleep.asleep_sdk_android_sampleapp.ui.main
 import ai.asleep.asleep_sdk_android_sampleapp.BuildConfig
 import ai.asleep.asleep_sdk_android_sampleapp.R
 import ai.asleep.asleep_sdk_android_sampleapp.databinding.ActivityMainBinding
+import ai.asleep.asleep_sdk_android_sampleapp.study.LatestStudy
+import ai.asleep.asleep_sdk_android_sampleapp.study.StudyApiClient
 import ai.asleep.asleep_sdk_android_sampleapp.ui.Constants
 import ai.asleep.asleep_sdk_android_sampleapp.ui.Constants.EXTRA_ASLEEP_USER_ID
 import ai.asleep.asleep_sdk_android_sampleapp.ui.Constants.EXTRA_FROM_STATE
@@ -13,6 +15,7 @@ import ai.asleep.asleep_sdk_android_sampleapp.utils.showErrorDialog
 import ai.asleep.asleepsdk.Asleep
 import ai.asleep.asleepsdk.data.Session
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import androidx.activity.viewModels
@@ -27,6 +30,9 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var permissionManager: PermissionManager
+    private lateinit var studyApiClient: StudyApiClient
+    private var latestStudy: LatestStudy? = null
+    private var sleepSetupStarted = false
 
     private val asleepViewModel: AsleepViewModel by viewModels()
 
@@ -37,15 +43,16 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         permissionManager = PermissionManager(this)
+        studyApiClient = StudyApiClient(BuildConfig.STUDY_API_BASE_URL.trimEnd('/'))
         setPermissionObserver()
-        permissionManager.checkAllPermissions()
+        setStudyFlowListeners()
 
         // Define Main screen by AsleepState
         lifecycleScope.launch {
             asleepViewModel.asleepState.collect { state ->
                 when (state) {
                     AsleepState.STATE_IDLE -> {
-                        checkRunningService()
+                        if (sleepSetupStarted) checkRunningService()
                     }
                     AsleepState.STATE_INITIALIZING -> {
                         binding.llButtons.visibility = View.VISIBLE
@@ -124,6 +131,87 @@ class MainActivity : AppCompatActivity() {
         asleepViewModel.shouldGoToReport.observe(this) { shouldGoToReport ->
             if (shouldGoToReport) { gotoReportActivity(Constants.StateName.TRACKING.name) }
         }
+    }
+
+    private fun setStudyFlowListeners() {
+        binding.btnLoadStudy.setOnClickListener {
+            val username = binding.etParticipantUsername.text.toString().trim()
+            if (username.isBlank()) {
+                showStudyError(getString(R.string.participant_username_required))
+                return@setOnClickListener
+            }
+
+            setStudyLoading(true)
+            studyApiClient.loginAndLoadLatestStudy(
+                username = username,
+                onSuccess = { study ->
+                    runOnUiThread {
+                        setStudyLoading(false)
+                        latestStudy = study
+                        binding.tvLatestLectureTitle.text = study.title
+                        binding.studyLoginContainer.visibility = View.GONE
+                        binding.quizConfirmationContainer.visibility = View.VISIBLE
+                        val hasQuizUrl = !study.quizUrl.isNullOrBlank()
+                        binding.btnQuizNo.isEnabled = hasQuizUrl
+                        binding.tvQuizError.visibility = if (hasQuizUrl) View.GONE else View.VISIBLE
+                        if (!hasQuizUrl) {
+                            binding.tvQuizError.text = getString(R.string.missing_quiz_url)
+                        }
+                    }
+                },
+                onError = { message ->
+                    runOnUiThread {
+                        setStudyLoading(false)
+                        showStudyError(message)
+                    }
+                }
+            )
+        }
+
+        binding.btnQuizNo.setOnClickListener {
+            val quizUrl = latestStudy?.quizUrl
+            if (quizUrl.isNullOrBlank()) {
+                binding.tvQuizError.text = getString(R.string.missing_quiz_url)
+                binding.tvQuizError.visibility = View.VISIBLE
+                return@setOnClickListener
+            }
+            try {
+                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(quizUrl)))
+            } catch (_: Exception) {
+                binding.tvQuizError.text = "Unable to open the quiz link."
+                binding.tvQuizError.visibility = View.VISIBLE
+            }
+        }
+
+        binding.btnQuizYes.setOnClickListener { showSleepSetup() }
+    }
+
+    private fun setStudyLoading(loading: Boolean) {
+        binding.btnLoadStudy.isEnabled = !loading
+        binding.etParticipantUsername.isEnabled = !loading
+        binding.studyLoading.visibility = if (loading) View.VISIBLE else View.GONE
+        if (loading) binding.tvStudyError.visibility = View.GONE
+    }
+
+    private fun showStudyError(message: String) {
+        binding.tvStudyError.text = message
+        binding.tvStudyError.visibility = View.VISIBLE
+    }
+
+    private fun showSleepSetup() {
+        if (sleepSetupStarted) return
+        latestStudy?.let {
+            asleepViewModel.setTmrStudyContext(
+                studyGroup = it.studyGroup,
+                cueId = it.cueId,
+                cueUrl = it.cueUrl
+            )
+        }
+        sleepSetupStarted = true
+        binding.quizConfirmationContainer.visibility = View.GONE
+        binding.sleepSetupContainer.visibility = View.VISIBLE
+        permissionManager.checkAllPermissions()
+        checkRunningService()
     }
 
     private fun showInsufficientTimeDialog() {

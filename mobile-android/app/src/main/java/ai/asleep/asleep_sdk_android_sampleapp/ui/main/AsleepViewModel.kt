@@ -35,6 +35,9 @@ class AsleepViewModel @Inject constructor(
     val asleepUserId: LiveData<String?> get() = _asleepUserId
 
     private var _asleepConfig = MutableLiveData<AsleepConfig?>(null)
+    private var studyGroup: String? = null
+    private var cueId: String? = null
+    private var cueUrl: String? = null
 
     // Step 2~4: Tracking
     private var _sessionId = MutableStateFlow<String?>(null)
@@ -170,9 +173,18 @@ class AsleepViewModel @Inject constructor(
         startTmrMonitoring()
     }
 
+    fun setTmrStudyContext(studyGroup: String?, cueId: String?, cueUrl: String?) {
+        this.studyGroup = studyGroup
+        this.cueId = cueId
+        this.cueUrl = cueUrl
+    }
+
     private fun startTmrMonitoring() {
         val intent = Intent(applicationContext, TmrMonitoringService::class.java).apply {
             action = TmrMonitoringService.ACTION_START
+            putExtra(TmrMonitoringService.EXTRA_STUDY_GROUP, studyGroup)
+            putExtra(TmrMonitoringService.EXTRA_CUE_ID, cueId)
+            putExtra(TmrMonitoringService.EXTRA_CUE_URL, cueUrl)
         }
         ContextCompat.startForegroundService(applicationContext, intent)
     }
