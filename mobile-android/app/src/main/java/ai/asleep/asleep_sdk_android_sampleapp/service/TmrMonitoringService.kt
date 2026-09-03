@@ -29,6 +29,7 @@ class TmrMonitoringService : Service() {
     private var studyGroup: String? = null
     private var cueId: String? = null
     private var cueUrl: String? = null
+    private var audioVolume = DEFAULT_AUDIO_VOLUME
 
     private val pollRunnable = object : Runnable {
         override fun run() {
@@ -49,6 +50,9 @@ class TmrMonitoringService : Service() {
                 studyGroup = intent.getStringExtra(EXTRA_STUDY_GROUP)
                 cueId = intent.getStringExtra(EXTRA_CUE_ID)
                 cueUrl = intent.getStringExtra(EXTRA_CUE_URL)
+                audioVolume = intent.getFloatExtra(EXTRA_AUDIO_VOLUME, DEFAULT_AUDIO_VOLUME)
+                    .coerceIn(0f, 1f)
+                audioPlayer.setVolume(audioVolume)
                 val cueUrlPresent = !cueUrl.isNullOrBlank()
                 Log.i(
                     TAG,
@@ -207,6 +211,8 @@ class TmrMonitoringService : Service() {
             "ai.asleep.asleep_sdk_android_sampleapp.extra.CUE_ID"
         const val EXTRA_CUE_URL =
             "ai.asleep.asleep_sdk_android_sampleapp.extra.CUE_URL"
+        const val EXTRA_AUDIO_VOLUME =
+            "ai.asleep.asleep_sdk_android_sampleapp.extra.AUDIO_VOLUME"
 
         // Debug builds only: set to true temporarily to trigger the cue on service start.
         private const val DEBUG_SIMULATE_DEEP_SLEEP = false
@@ -221,5 +227,6 @@ class TmrMonitoringService : Service() {
         const val STAGE_DEEP = 2
         private const val STUDY_GROUP_TMR = "TMR"
         private const val STUDY_GROUP_CONTROL = "CONTROL"
+        private const val DEFAULT_AUDIO_VOLUME = 0.5f
     }
 }

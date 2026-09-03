@@ -8,6 +8,8 @@ class PreferenceHelper private constructor() {
     companion object {
         private const val PREF_NAME = "sampleapp_prefs"
         private const val START_TIME_KEY = "start_time"
+        private const val AUDIO_VOLUME_KEY = "audio_volume"
+        private const val DEFAULT_AUDIO_VOLUME = 0.5f
 
         private const val ASLEEP_PREF_NAME = "asleep_prefs"
         private const val ASLEEP_USER_ID_KEY = "user_id"
@@ -27,6 +29,17 @@ class PreferenceHelper private constructor() {
         fun saveStartTrackingTime(context: Context, time: Long) {
             context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE).edit()
                 .putLong(START_TIME_KEY, time).apply()
+        }
+
+        fun getAudioVolume(context: Context): Float {
+            return context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+                .getFloat(AUDIO_VOLUME_KEY, DEFAULT_AUDIO_VOLUME)
+                .coerceIn(0f, 1f)
+        }
+
+        fun saveAudioVolume(context: Context, volume: Float) {
+            context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE).edit()
+                .putFloat(AUDIO_VOLUME_KEY, volume.coerceIn(0f, 1f)).apply()
         }
 
         private fun getAsleepPreferences(context: Context): SharedPreferences {

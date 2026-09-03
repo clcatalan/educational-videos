@@ -151,6 +151,53 @@
         android:layout_marginVertical="8dp"
         android:background="#DDDDDD" /> <!-- Divider -->
 
+    <LinearLayout
+        android:id="@+id/audio_calibration_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/audio_calibration_title"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tv_audio_volume"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp" />
+
+        <SeekBar
+            android:id="@+id/seek_audio_volume"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="100"
+            android:progress="50" />
+
+        <Button
+            android:id="@+id/btn_test_audio"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/test_audio" />
+
+        <TextView
+            android:id="@+id/tv_audio_calibration_error"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textColor="#B00020"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginVertical="8dp"
+        android:background="#DDDDDD" />
+
     <TextView
         android:id="@+id/tv_asleep_user_id"
         android:layout_width="match_parent"

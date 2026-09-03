@@ -21,6 +21,12 @@
     <string name="yes_quiz_completed">Yes — continue to sleep setup</string>
     <string name="missing_quiz_url">No post-video quiz link is configured for this lecture. Please contact the study team.</string>
     <string name="participant_username_required">Enter your participant username/code.</string>
+    <string name="audio_calibration_title">Sleep audio volume</string>
+    <string name="audio_volume_percent">Volume: %1$d%%</string>
+    <string name="test_audio">Test audio</string>
+    <string name="stop_test_audio">Stop test audio</string>
+    <string name="audio_calibration_missing_cue">No lecture cue is configured for this TMR session.</string>
+    <string name="audio_calibration_invalid_group">Audio preview is unavailable for this study group.</string>
 
     <string name="report_subtitle_sleep_stages">Sleep Stages</string>
     <string name="report_subtitle_snoring_stages">Snoring Stages</string>

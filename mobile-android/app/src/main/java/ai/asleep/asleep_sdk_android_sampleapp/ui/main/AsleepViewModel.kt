@@ -38,6 +38,7 @@ class AsleepViewModel @Inject constructor(
     private var studyGroup: String? = null
     private var cueId: String? = null
     private var cueUrl: String? = null
+    private var audioVolume = PreferenceHelper.getAudioVolume(applicationContext)
 
     // Step 2~4: Tracking
     private var _sessionId = MutableStateFlow<String?>(null)
@@ -179,12 +180,17 @@ class AsleepViewModel @Inject constructor(
         this.cueUrl = cueUrl
     }
 
+    fun setAudioVolume(volume: Float) {
+        audioVolume = volume.coerceIn(0f, 1f)
+    }
+
     private fun startTmrMonitoring() {
         val intent = Intent(applicationContext, TmrMonitoringService::class.java).apply {
             action = TmrMonitoringService.ACTION_START
             putExtra(TmrMonitoringService.EXTRA_STUDY_GROUP, studyGroup)
             putExtra(TmrMonitoringService.EXTRA_CUE_ID, cueId)
             putExtra(TmrMonitoringService.EXTRA_CUE_URL, cueUrl)
+            putExtra(TmrMonitoringService.EXTRA_AUDIO_VOLUME, audioVolume)
         }
         ContextCompat.startForegroundService(applicationContext, intent)
     }

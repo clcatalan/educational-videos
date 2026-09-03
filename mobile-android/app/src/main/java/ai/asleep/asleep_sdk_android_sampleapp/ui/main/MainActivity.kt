@@ -3,6 +3,7 @@ package ai.asleep.asleep_sdk_android_sampleapp.ui.main
 import ai.asleep.asleep_sdk_android_sampleapp.BuildConfig
 import ai.asleep.asleep_sdk_android_sampleapp.R
 import ai.asleep.asleep_sdk_android_sampleapp.databinding.ActivityMainBinding
+import ai.asleep.asleep_sdk_android_sampleapp.sleep.TmrAudioPlayer
 import ai.asleep.asleep_sdk_android_sampleapp.study.LatestStudy
 import ai.asleep.asleep_sdk_android_sampleapp.study.StudyApiClient
 import ai.asleep.asleep_sdk_android_sampleapp.ui.Constants
@@ -11,6 +12,7 @@ import ai.asleep.asleep_sdk_android_sampleapp.ui.Constants.EXTRA_FROM_STATE
 import ai.asleep.asleep_sdk_android_sampleapp.ui.Constants.EXTRA_SESSION_ID
 import ai.asleep.asleep_sdk_android_sampleapp.ui.autotracking.AutoTrackingDialogFragment
 import ai.asleep.asleep_sdk_android_sampleapp.ui.report.ReportActivity
+import ai.asleep.asleep_sdk_android_sampleapp.utils.PreferenceHelper
 import ai.asleep.asleep_sdk_android_sampleapp.utils.showErrorDialog
 import ai.asleep.asleepsdk.Asleep
 import ai.asleep.asleepsdk.data.Session
@@ -18,12 +20,14 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
+import android.widget.SeekBar
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
@@ -31,8 +35,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var permissionManager: PermissionManager
     private lateinit var studyApiClient: StudyApiClient
+    private lateinit var calibrationAudioPlayer: TmrAudioPlayer
     private var latestStudy: LatestStudy? = null
     private var sleepSetupStarted = false
+    private var calibrationPreviewPlaying = false
 
     private val asleepViewModel: AsleepViewModel by viewModels()
 
@@ -44,8 +50,10 @@ class MainActivity : AppCompatActivity() {
 
         permissionManager = PermissionManager(this)
         studyApiClient = StudyApiClient(BuildConfig.STUDY_API_BASE_URL.trimEnd('/'))
+        calibrationAudioPlayer = TmrAudioPlayer(this)
         setPermissionObserver()
         setStudyFlowListeners()
+        setAudioCalibrationListeners()
 
         // Define Main screen by AsleepState
         lifecycleScope.launch {
@@ -67,6 +75,7 @@ class MainActivity : AppCompatActivity() {
                             text = getString(R.string.button_text_start_tracking)
                             setOnClickListener {
                                 if (permissionManager.allPermissionsGranted.value == true) {
+                                    stopCalibrationPreview()
                                     asleepViewModel.beginSleepTracking()
                                 } else {
                                     permissionManager.checkAndRequestPermissions()
@@ -193,6 +202,75 @@ class MainActivity : AppCompatActivity() {
         if (loading) binding.tvStudyError.visibility = View.GONE
     }
 
+    private fun setAudioCalibrationListeners() {
+        val savedVolume = PreferenceHelper.getAudioVolume(this)
+        binding.seekAudioVolume.progress = (savedVolume * 100).roundToInt()
+        updateAudioVolumeLabel(savedVolume)
+        calibrationAudioPlayer.setVolume(savedVolume)
+        asleepViewModel.setAudioVolume(savedVolume)
+
+        binding.seekAudioVolume.setOnSeekBarChangeListener(
+            object : SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                    val volume = progress / 100f
+                    calibrationAudioPlayer.setVolume(volume)
+                    asleepViewModel.setAudioVolume(volume)
+                    PreferenceHelper.saveAudioVolume(this@MainActivity, volume)
+                    updateAudioVolumeLabel(volume)
+                }
+
+                override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
+                override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
+            }
+        )
+
+        binding.btnTestAudio.setOnClickListener {
+            if (calibrationPreviewPlaying) {
+                stopCalibrationPreview()
+            } else {
+                startCalibrationPreview()
+            }
+        }
+    }
+
+    private fun startCalibrationPreview() {
+        val study = latestStudy ?: return
+        binding.tvAudioCalibrationError.visibility = View.GONE
+        when (study.studyGroup) {
+            STUDY_GROUP_CONTROL -> calibrationAudioPlayer.playLoopingWhiteNoise()
+            STUDY_GROUP_TMR -> {
+                val selectedCueUrl = study.cueUrl
+                if (selectedCueUrl.isNullOrBlank()) {
+                    binding.tvAudioCalibrationError.setText(R.string.audio_calibration_missing_cue)
+                    binding.tvAudioCalibrationError.visibility = View.VISIBLE
+                    return
+                }
+                calibrationAudioPlayer.playCue(selectedCueUrl)
+            }
+            else -> {
+                binding.tvAudioCalibrationError.setText(R.string.audio_calibration_invalid_group)
+                binding.tvAudioCalibrationError.visibility = View.VISIBLE
+                return
+            }
+        }
+        calibrationPreviewPlaying = true
+        binding.btnTestAudio.setText(R.string.stop_test_audio)
+    }
+
+    private fun stopCalibrationPreview() {
+        if (!calibrationPreviewPlaying) return
+        calibrationAudioPlayer.stopPreview()
+        calibrationPreviewPlaying = false
+        binding.btnTestAudio.setText(R.string.test_audio)
+    }
+
+    private fun updateAudioVolumeLabel(volume: Float) {
+        binding.tvAudioVolume.text = getString(
+            R.string.audio_volume_percent,
+            (volume * 100).roundToInt()
+        )
+    }
+
     private fun showStudyError(message: String) {
         binding.tvStudyError.text = message
         binding.tvStudyError.visibility = View.VISIBLE
@@ -210,8 +288,19 @@ class MainActivity : AppCompatActivity() {
         sleepSetupStarted = true
         binding.quizConfirmationContainer.visibility = View.GONE
         binding.sleepSetupContainer.visibility = View.VISIBLE
+        binding.audioCalibrationContainer.visibility = View.VISIBLE
         permissionManager.checkAllPermissions()
         checkRunningService()
+    }
+
+    override fun onStop() {
+        stopCalibrationPreview()
+        super.onStop()
+    }
+
+    override fun onDestroy() {
+        calibrationAudioPlayer.release()
+        super.onDestroy()
     }
 
     private fun showInsufficientTimeDialog() {
@@ -279,5 +368,10 @@ class MainActivity : AppCompatActivity() {
         } else {
             asleepViewModel.initAsleepConfig()
         }
+    }
+
+    private companion object {
+        const val STUDY_GROUP_TMR = "TMR"
+        const val STUDY_GROUP_CONTROL = "CONTROL"
     }
 }

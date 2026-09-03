@@ -8,6 +8,10 @@ import androidx.media3.exoplayer.ExoPlayer
 class TmrAudioPlayer(context: Context) {
     private val player = ExoPlayer.Builder(context.applicationContext).build()
 
+    fun setVolume(volume: Float) {
+        player.volume = volume.coerceIn(0f, 1f)
+    }
+
     fun playCue(cueUrl: String) {
         player.repeatMode = Player.REPEAT_MODE_OFF
         player.setMediaItem(MediaItem.fromUri(cueUrl))
@@ -27,6 +31,10 @@ class TmrAudioPlayer(context: Context) {
     }
 
     fun stopWhiteNoise() {
+        stopPlayback()
+    }
+
+    fun stopPreview() {
         stopPlayback()
     }
 
