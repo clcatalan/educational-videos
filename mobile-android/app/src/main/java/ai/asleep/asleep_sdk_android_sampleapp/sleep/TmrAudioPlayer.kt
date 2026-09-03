@@ -12,6 +12,10 @@ class TmrAudioPlayer(context: Context) {
         player.volume = volume.coerceIn(0f, 1f)
     }
 
+    fun setVolumePercent(volumePercent: Int) {
+        player.volume = volumePercent.coerceIn(0, 100) / 100f
+    }
+
     fun playCue(cueUrl: String) {
         player.repeatMode = Player.REPEAT_MODE_OFF
         player.setMediaItem(MediaItem.fromUri(cueUrl))

@@ -17,6 +17,7 @@ import android.os.IBinder
 import android.os.Looper
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import kotlin.math.roundToInt
 
 class TmrMonitoringService : Service() {
     private val handler = Handler(Looper.getMainLooper())
@@ -29,12 +30,33 @@ class TmrMonitoringService : Service() {
     private var studyGroup: String? = null
     private var cueId: String? = null
     private var cueUrl: String? = null
-    private var audioVolume = DEFAULT_AUDIO_VOLUME
+    private var calibratedVolumePercent = DEFAULT_AUDIO_VOLUME_PERCENT
+    private var currentVolumePercent = DEFAULT_AUDIO_VOLUME_PERCENT
+    private var waitingForSleepAfterWake = false
+    private var isVolumeRecoveryActive = false
 
     private val pollRunnable = object : Runnable {
         override fun run() {
             requestCurrentSleepStage()
             handler.postDelayed(this, POLL_INTERVAL_MS)
+        }
+    }
+
+    private val recoveryRunnable = object : Runnable {
+        override fun run() {
+            if (!isVolumeRecoveryActive || waitingForSleepAfterWake) return
+
+            currentVolumePercent = (currentVolumePercent + RECOVERY_STEP_PERCENTAGE_POINTS)
+                .coerceAtMost(calibratedVolumePercent)
+            audioPlayer.setVolumePercent(currentVolumePercent)
+            Log.i(TAG, "Sleep audio recovery volume changed to $currentVolumePercent%")
+
+            if (currentVolumePercent >= calibratedVolumePercent) {
+                isVolumeRecoveryActive = false
+                Log.i(TAG, "Calibrated volume target reached: $calibratedVolumePercent%")
+            } else {
+                handler.postDelayed(this, RECOVERY_INTERVAL_MS)
+            }
         }
     }
 
@@ -50,9 +72,12 @@ class TmrMonitoringService : Service() {
                 studyGroup = intent.getStringExtra(EXTRA_STUDY_GROUP)
                 cueId = intent.getStringExtra(EXTRA_CUE_ID)
                 cueUrl = intent.getStringExtra(EXTRA_CUE_URL)
-                audioVolume = intent.getFloatExtra(EXTRA_AUDIO_VOLUME, DEFAULT_AUDIO_VOLUME)
-                    .coerceIn(0f, 1f)
-                audioPlayer.setVolume(audioVolume)
+                calibratedVolumePercent = (
+                    intent.getFloatExtra(EXTRA_AUDIO_VOLUME, DEFAULT_AUDIO_VOLUME)
+                        .coerceIn(0f, 1f) * 100
+                    ).roundToInt()
+                currentVolumePercent = calibratedVolumePercent
+                audioPlayer.setVolumePercent(currentVolumePercent)
                 val cueUrlPresent = !cueUrl.isNullOrBlank()
                 Log.i(
                     TAG,
@@ -83,9 +108,11 @@ class TmrMonitoringService : Service() {
     override fun onDestroy() {
         isMonitoring = false
         handler.removeCallbacks(pollRunnable)
+        cancelVolumeRecovery()
         stopControlWhiteNoise()
         audioPlayer.stopCue()
         audioPlayer.release()
+        Log.i(TAG, "Service cleanup complete: recovery cancelled and audio player released")
         super.onDestroy()
     }
 
@@ -125,6 +152,7 @@ class TmrMonitoringService : Service() {
 
                 override fun onSleepDataReceived(session: Session) {
                     requestInFlight = false
+                    if (!isMonitoring) return
                     session.sleepStages?.lastOrNull()?.let(::handleSleepStage)
                 }
             }
@@ -132,6 +160,10 @@ class TmrMonitoringService : Service() {
     }
 
     private fun handleSleepStage(stage: Int) {
+        if (studyGroup == STUDY_GROUP_CONTROL || studyGroup == STUDY_GROUP_TMR) {
+            updateVolumeForSleepStage(stage)
+        }
+
         if (studyGroup != STUDY_GROUP_TMR) return
 
         if (stage == STAGE_DEEP) {
@@ -160,6 +192,47 @@ class TmrMonitoringService : Service() {
         if (stage == STAGE_WAKE || stage == STAGE_LIGHT) {
             audioPlayer.stopCue()
         }
+    }
+
+    private fun updateVolumeForSleepStage(stage: Int) {
+        when (stage) {
+            STAGE_WAKE -> handleWakeDetected()
+            STAGE_LIGHT, STAGE_DEEP -> {
+                if (waitingForSleepAfterWake) startVolumeRecovery()
+            }
+        }
+    }
+
+    private fun handleWakeDetected() {
+        if (waitingForSleepAfterWake) return
+
+        cancelVolumeRecovery()
+        waitingForSleepAfterWake = true
+        currentVolumePercent = WAKE_VOLUME_PERCENT
+        audioPlayer.setVolumePercent(currentVolumePercent)
+        Log.i(TAG, "Wake detected; recovery cancelled/reset and audio volume muted to $WAKE_VOLUME_PERCENT%")
+    }
+
+    private fun startVolumeRecovery() {
+        cancelVolumeRecovery()
+        waitingForSleepAfterWake = false
+        currentVolumePercent = RECOVERY_START_VOLUME_PERCENT
+            .coerceAtMost(calibratedVolumePercent)
+        audioPlayer.setVolumePercent(currentVolumePercent)
+        Log.i(TAG, "Sleep resumed; volume recovery started at $currentVolumePercent%")
+
+        if (currentVolumePercent >= calibratedVolumePercent) {
+            Log.i(TAG, "Calibrated volume target reached: $calibratedVolumePercent%")
+            return
+        }
+
+        isVolumeRecoveryActive = true
+        handler.postDelayed(recoveryRunnable, RECOVERY_INTERVAL_MS)
+    }
+
+    private fun cancelVolumeRecovery() {
+        handler.removeCallbacks(recoveryRunnable)
+        isVolumeRecoveryActive = false
     }
 
     private fun isTmrCueConfigured(): Boolean =
@@ -228,5 +301,12 @@ class TmrMonitoringService : Service() {
         private const val STUDY_GROUP_TMR = "TMR"
         private const val STUDY_GROUP_CONTROL = "CONTROL"
         private const val DEFAULT_AUDIO_VOLUME = 0.5f
+
+        // Implementation defaults pending final study-protocol confirmation.
+        private const val DEFAULT_AUDIO_VOLUME_PERCENT = 50
+        private const val WAKE_VOLUME_PERCENT = 0
+        private const val RECOVERY_START_VOLUME_PERCENT = 1
+        private const val RECOVERY_STEP_PERCENTAGE_POINTS = 1
+        private const val RECOVERY_INTERVAL_MS = 60_000L
     }
 }
