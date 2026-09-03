@@ -25,6 +25,7 @@ class TmrMonitoringService : Service() {
     private var cueTriggeredForCurrentN3Episode = false
     private var requestInFlight = false
     private var isMonitoring = false
+    private var isControlWhiteNoisePlaying = false
     private var studyGroup: String? = null
     private var cueId: String? = null
     private var cueUrl: String? = null
@@ -51,12 +52,18 @@ class TmrMonitoringService : Service() {
                 val cueUrlPresent = !cueUrl.isNullOrBlank()
                 Log.i(
                     TAG,
-                    "TMR configuration received: group=$studyGroup, cueId=$cueId, cueUrlPresent=$cueUrlPresent"
+                    "Study configuration received: group=$studyGroup, cueId=$cueId, cueUrlPresent=$cueUrlPresent"
                 )
-                if (!isTmrCueConfigured()) {
-                    Log.w(
+                when (studyGroup) {
+                    STUDY_GROUP_TMR -> {
+                        if (!isTmrCueConfigured()) {
+                            Log.w(TAG, "TMR playback disabled: cue URL must be present")
+                        }
+                    }
+                    STUDY_GROUP_CONTROL -> Unit
+                    else -> Log.w(
                         TAG,
-                        "TMR playback disabled: group must be TMR and cue URL must be present"
+                        "Audio playback disabled: invalid or unsupported study group=$studyGroup"
                     )
                 }
                 startMonitoring()
@@ -72,6 +79,7 @@ class TmrMonitoringService : Service() {
     override fun onDestroy() {
         isMonitoring = false
         handler.removeCallbacks(pollRunnable)
+        stopControlWhiteNoise()
         audioPlayer.stopCue()
         audioPlayer.release()
         super.onDestroy()
@@ -82,6 +90,11 @@ class TmrMonitoringService : Service() {
 
         isMonitoring = true
         startForeground(NOTIFICATION_ID, createNotification())
+        if (studyGroup == STUDY_GROUP_CONTROL) {
+            audioPlayer.playLoopingWhiteNoise()
+            isControlWhiteNoisePlaying = true
+            Log.i(TAG, "CONTROL white noise started")
+        }
         handler.post(pollRunnable)
         if (BuildConfig.DEBUG && DEBUG_SIMULATE_DEEP_SLEEP) {
             simulateStableDeepSleep()
@@ -115,6 +128,8 @@ class TmrMonitoringService : Service() {
     }
 
     private fun handleSleepStage(stage: Int) {
+        if (studyGroup != STUDY_GROUP_TMR) return
+
         if (stage == STAGE_DEEP) {
             consecutiveN3Detections++
             if (consecutiveN3Detections >= REQUIRED_N3_DETECTIONS &&
@@ -145,6 +160,14 @@ class TmrMonitoringService : Service() {
 
     private fun isTmrCueConfigured(): Boolean =
         studyGroup == STUDY_GROUP_TMR && !cueUrl.isNullOrBlank()
+
+    private fun stopControlWhiteNoise() {
+        if (!isControlWhiteNoisePlaying) return
+
+        audioPlayer.stopWhiteNoise()
+        isControlWhiteNoisePlaying = false
+        Log.i(TAG, "CONTROL white noise stopped")
+    }
 
     private fun createNotification() = NotificationCompat.Builder(this, CHANNEL_ID)
         .setSmallIcon(R.mipmap.ic_sampleapp)
@@ -197,5 +220,6 @@ class TmrMonitoringService : Service() {
         const val STAGE_LIGHT = 1
         const val STAGE_DEEP = 2
         private const val STUDY_GROUP_TMR = "TMR"
+        private const val STUDY_GROUP_CONTROL = "CONTROL"
     }
 }
