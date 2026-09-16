@@ -40,12 +40,6 @@ function LecturePlayer() {
       setLecture(data);
       setLoading(false);
 
-      fetch(`/api/users/${currentUser.id}/watched`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lectureId: data.id }),
-      }).catch((err) => console.error("Error recording watched lecture:", err));
-
       fetch(`/api/lectures/${data.id}/quiz`)
         .then((res) => (res.ok ? res.json() : null))
         .then((quiz) => setLecture((prev) => ({ ...prev, quizLink: quiz?.link ?? null })))
@@ -108,6 +102,12 @@ function LecturePlayer() {
                     audioRef.current.currentTime = 0;
                   }
                   setShowQuizDialog(true);
+
+                  fetch(`/api/users/${currentUser.id}/watched`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ lectureId: lecture.id }),
+                  }).catch((err) => console.error("Error recording watched lecture:", err));
                 }}
               />
             </div>
