@@ -1,6 +1,7 @@
 require('dotenv').config();
 const db = require('./index');
 const lectures = require('../data/lectures');
+const { lectureCueAssignments } = require('../data/learningCues');
 
 async function seed() {
   await db.query('TRUNCATE lectures RESTART IDENTITY CASCADE');
@@ -24,7 +25,16 @@ async function seed() {
 
   await db.query(`SELECT setval('lectures_id_seq', (SELECT MAX(id) FROM lectures))`);
 
-  console.log(`Seed complete: inserted ${lectures.length} lectures`);
+  for (const assignment of lectureCueAssignments) {
+    await db.query(
+      `INSERT INTO lecture_playlist (lecture_id, playlist_id)
+       VALUES ($1, $2)
+       ON CONFLICT (lecture_id) DO UPDATE SET playlist_id = EXCLUDED.playlist_id`,
+      [assignment.lectureId, assignment.cueId]
+    );
+  }
+
+  console.log(`Seed complete: inserted ${lectures.length} lectures and ${lectureCueAssignments.length} cue assignments`);
   process.exit(0);
 }
 

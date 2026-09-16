@@ -2,7 +2,9 @@ require('dotenv').config();
 const playlistRoutes = require("./routes/playlists");
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const db = require('./db');
+const sleepStageRoutes = require("./routes/sleepStage");
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -14,6 +16,11 @@ const adminRoutes = require("./routes/admin");
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use('/study-audio', express.static(
+  path.resolve(__dirname, '../frontend/public/audio'),
+  { dotfiles: 'deny', fallthrough: false, index: false }
+));
+app.use("/api/sleep-stage", sleepStageRoutes);
 
 const toLecture = row => ({
   id: row.id,
@@ -101,7 +108,6 @@ app.use("/api/admin", adminRoutes);
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
-
 
 
 

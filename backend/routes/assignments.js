@@ -1,5 +1,6 @@
 const express = require("express");
 const db = require("../db");
+const { learningCues } = require("../data/learningCues");
 
 const router = express.Router();
 
@@ -17,21 +18,10 @@ router.post("/", async (req, res) => {
       });
     }
 
-    // Check whether this playlist is already assigned
-    const existing = await db.query(
-      `
-      SELECT lecture_id
-      FROM lecture_playlist
-      WHERE playlist_id = $1
-      AND lecture_id <> $2
-      `,
-      [playlistId, lectureId]
-    );
-
-    if (existing.rows.length > 0) {
-      return res.status(409).json({
+    if (!learningCues[playlistId]) {
+      return res.status(400).json({
         success: false,
-        message: "This playlist has already been assigned to another lecture.",
+        message: "Unknown learning cue",
       });
     }
 
