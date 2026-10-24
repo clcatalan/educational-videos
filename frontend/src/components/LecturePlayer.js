@@ -13,6 +13,8 @@ function LecturePlayer() {
   const [lecture, setLecture] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showQuizDialog, setShowQuizDialog] = useState(false);
+  // Video stays locked until a learning cue track is confirmed
+  const [cueConfirmed, setCueConfirmed] = useState(false);
 
   // undefined = still loading assignment
   // null = no assignment
@@ -21,6 +23,8 @@ function LecturePlayer() {
   const audioRef = useRef(null);
 
   useEffect(() => {
+    setCueConfirmed(false);
+    setAssignedMusic(undefined);
     fetchLecture();
   }, [id]);
 
@@ -83,6 +87,14 @@ function LecturePlayer() {
         <div className="player-media-row">
           <div className="video-column">
             <div className="video-wrapper">
+              {!cueConfirmed ? (
+                <div
+                  className="video-locked"
+                  style={{ backgroundImage: `url(${lecture.thumbnail})` }}
+                >
+                  <p>🎵 Select and confirm a Learning Cue track to start the video</p>
+                </div>
+              ) : (
               <YouTubePlayer
                 videoUrl={lecture.videoUrl}
                 onPlay={() => {
@@ -116,12 +128,15 @@ function LecturePlayer() {
                   }).catch((err) => console.error("Error recording watched lecture:", err));
                 }}
               />
+              )}
             </div>
           </div>
 
           <LearningCue
             lectureId={lecture.id}
             onMusicChanged={setAssignedMusic}
+            locked={cueConfirmed}
+            onConfirm={() => setCueConfirmed(true)}
           />
         </div>
 
@@ -142,7 +157,9 @@ function LecturePlayer() {
 
             </div>
 
+            {/* key forces a fresh <audio> per track; browsers ignore <source> src changes */}
             <audio
+              key={music.file}
               ref={audioRef}
               controls
               loop

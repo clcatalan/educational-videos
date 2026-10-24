@@ -1,53 +1,83 @@
 const lectures = [
   {
     id: 1,
-    title: "Unbelievable Moments from Planet Earth | 20 Years of Planet Earth",
-    description: "Two decades of groundbreaking wildlife footage capturing some of the most stunning and surprising moments ever filmed in nature.",
-    instructor: "BBC Earth",
-    duration: "29m",
-    category: "Documentary",
-    thumbnail: "https://img.youtube.com/vi/Qbbzln44Mo8/hqdefault.jpg",
-    videoUrl: "https://www.youtube.com/embed/Qbbzln44Mo8"
+    title: "How to Stop AI from Killing Your Critical Thinking",
+    description: "A look at how relying on AI tools can erode critical thinking, and how to design and use them so they strengthen it instead.",
+    instructor: "TED",
+    duration: "14m 54s",
+    category: "Educational",
+    thumbnail: "https://img.youtube.com/vi/3lPnN8omdPA/hqdefault.jpg",
+    videoUrl: "https://www.youtube.com/embed/3lPnN8omdPA?start=436"
   },
   {
     id: 2,
-    title: "Here's What You'll Find At The Best Airports In The World",
-    description: "An inside look at the design, amenities, and operations that make the world's top-rated airports stand out.",
-    instructor: "Business Insider",
-    duration: "24m",
-    category: "Documentary",
-    thumbnail: "https://img.youtube.com/vi/yWXnfY_De8M/hqdefault.jpg",
-    videoUrl: "https://www.youtube.com/embed/yWXnfY_De8M"
+    title: "LLM & AI Agent Benchmarks vs Reality: Why AI Applications Break",
+    description: "Why strong benchmark scores for LLMs and AI agents often fail to carry over to real-world applications.",
+    instructor: "IBM Technology",
+    duration: "15m",
+    category: "Educational",
+    thumbnail: "https://img.youtube.com/vi/nVImVgKpoOY/hqdefault.jpg",
+    videoUrl: "https://www.youtube.com/embed/nVImVgKpoOY"
   },
   {
     id: 3,
-    title: "Why AI Tokens Are So Expensive",
-    description: "A breakdown of how AI token pricing works and why running large language models costs so much in compute.",
-    instructor: "Computerphile",
-    duration: "25m",
+    title: "How Voice AI Systems Actually Work",
+    description: "A walkthrough of the architecture behind voice AI systems, from speech recognition to language models to speech synthesis.",
+    instructor: "Quincy McCants",
+    duration: "15m 21s",
     category: "Educational",
-    thumbnail: "https://img.youtube.com/vi/-0HRzXk8vlk/hqdefault.jpg",
-    videoUrl: "https://www.youtube.com/embed/-0HRzXk8vlk?start=276"
+    thumbnail: "https://img.youtube.com/vi/rpqvo74ursk/hqdefault.jpg",
+    videoUrl: "https://www.youtube.com/embed/rpqvo74ursk"
   },
   {
     id: 4,
-    title: "Why Owning Nothing Is So Expensive",
-    description: "A breakdown of how subscription and rental economics can end up costing consumers more than ownership.",
-    instructor: "Business Insider",
-    duration: "25m",
-    category: "Documentary",
-    thumbnail: "https://img.youtube.com/vi/8AKn-zJMIwY/hqdefault.jpg",
-    videoUrl: "https://www.youtube.com/embed/8AKn-zJMIwY"
+    title: "How Do Robot Arms Work?",
+    description: "An introduction to the mechanics, motors, and control systems that let industrial robot arms move precisely.",
+    instructor: "This is Automation",
+    duration: "14m 19s",
+    category: "Educational",
+    thumbnail: "https://img.youtube.com/vi/QXkBMs30JAs/hqdefault.jpg",
+    videoUrl: "https://www.youtube.com/embed/QXkBMs30JAs"
   },
   {
     id: 5,
-    title: "15 Principles of Effective Leadership",
-    description: "Practical leadership principles for building stronger judgment, communication, and decision-making skills at work.",
-    instructor: "Alux.com",
-    duration: "20m",
+    title: "What is LLM Red Teaming?",
+    description: "How generative AI safety testing works, and how red teams probe large language models for harmful or unintended behavior.",
+    instructor: "AI Lingua",
+    duration: "13m",
     category: "Educational",
-    thumbnail: "https://img.youtube.com/vi/n2eVrcwCVkc/hqdefault.jpg",
-    videoUrl: "https://www.youtube.com/embed/n2eVrcwCVkc"
+    thumbnail: "https://img.youtube.com/vi/-OUmHDuaPPA/hqdefault.jpg",
+    videoUrl: "https://www.youtube.com/embed/-OUmHDuaPPA"
+  },
+  {
+    id: 6,
+    title: "How Do Vision Language Models Work?",
+    description: "An explanation of how vision language models combine image understanding with language models to reason about pictures.",
+    instructor: "Plere",
+    duration: "13m 16s",
+    category: "Educational",
+    thumbnail: "https://img.youtube.com/vi/bX7C4UoZXPQ/hqdefault.jpg",
+    videoUrl: "https://www.youtube.com/embed/bX7C4UoZXPQ"
+  },
+  {
+    id: 7,
+    title: "Introduction to Large Language Models",
+    description: "An overview of what large language models are, how they are trained, and where they are useful.",
+    instructor: "Google Cloud Tech",
+    duration: "15m 45s",
+    category: "Educational",
+    thumbnail: "https://img.youtube.com/vi/zizonToFXDs/hqdefault.jpg",
+    videoUrl: "https://www.youtube.com/embed/zizonToFXDs?start=384"
+  },
+  {
+    id: 8,
+    title: "AI in the Workspace: 'You Want to Keep Humans in the Loop'",
+    description: "A discussion of how companies are bringing AI into the workplace and why human oversight still matters.",
+    instructor: "Fortune Magazine",
+    duration: "14m 39s",
+    category: "Educational",
+    thumbnail: "https://img.youtube.com/vi/xcHHx9tKC_Y/hqdefault.jpg",
+    videoUrl: "https://www.youtube.com/embed/xcHHx9tKC_Y"
   },
 ];
 

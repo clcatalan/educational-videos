@@ -111,3 +111,84 @@
     pointer-events: none;
 }
 
+
+.learning-cue.locked .cue-header {
+    cursor: default;
+}
+
+.learning-cue.locked .cue-header:hover {
+    background: #e3f0ff;
+}
+
+.cue-confirm {
+    padding: 14px 20px;
+    background: #e3f0ff;
+    border-top: 1px solid #cfe4fb;
+}
+
+.cue-confirm-button {
+    width: 100%;
+    padding: 10px 18px;
+    border: none;
+    border-radius: 12px;
+    background: #667eea;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.25s;
+}
+
+.cue-confirm-button:hover:not(:disabled) {
+    background: #5568d3;
+}
+
+.cue-confirm-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.video-locked {
+    position: relative;
+    height: 500px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #000 center / cover no-repeat;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.video-locked::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+}
+
+.video-locked p {
+    position: relative;
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 600;
+    text-align: center;
+    padding: 0 20px;
+}
+
+.cue-preview {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px 20px 0;
+    background: #e3f0ff;
+    border-top: 1px solid #cfe4fb;
+}
+
+.cue-preview-label {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.cue-preview-player {
+    width: 100%;
+    height: 32px;
+}
