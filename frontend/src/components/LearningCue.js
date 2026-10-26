@@ -46,8 +46,15 @@ function LearningCue({ lectureId, onMusicChanged, locked, onConfirm }) {
         (a) => Number(a.lecture_id) === Number(lectureId)
       );
 
-      // Preselect the previous assignment; the user still has to confirm it
-      if (current) {
+      const takenElsewhere = current && data.some(
+        (a) =>
+          a.playlist_id === current.playlist_id &&
+          Number(a.lecture_id) !== Number(lectureId)
+      );
+
+      // Preselect the previous assignment; the user still has to confirm it.
+      // Skip it if another lecture also holds that cue, since it's disabled here.
+      if (current && !takenElsewhere) {
         const music = lectureMusic.find(
           (m) => m.id === current.playlist_id
         );
@@ -82,6 +89,8 @@ function LearningCue({ lectureId, onMusicChanged, locked, onConfirm }) {
 
       if (!result.success) {
         alert(result.message);
+        // Another lecture may have just taken this cue; refresh what's disabled
+        await loadAssignments();
         return;
       }
 
@@ -90,7 +99,7 @@ function LearningCue({ lectureId, onMusicChanged, locked, onConfirm }) {
       }
 
       if (onConfirm) {
-        onConfirm();
+        onConfirm(selectedMusic);
       }
 
       await loadAssignments();
@@ -160,6 +169,10 @@ function LearningCue({ lectureId, onMusicChanged, locked, onConfirm }) {
                   {selected && "✓ "}
                   {music.name}
                 </span>
+
+                {assigned && (
+                  <span className="playlist-item-tag">In use</span>
+                )}
               </div>
 
             );

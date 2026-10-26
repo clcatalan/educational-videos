@@ -824,3 +824,25 @@ animation:
 fadeUp .5s ease;
 
 }
+.lecture-card.locked {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.lecture-card.locked:hover,
+.lecture-card.locked:hover img {
+  transform: none;
+}
+
+.locked-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  background: rgba(0, 0, 0, 0.55);
+  color: white;
+  font-weight: 600;
+  text-align: center;
+}

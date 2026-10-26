@@ -1,6 +1,7 @@
 require('dotenv').config();
 const db = require('./index');
 const { lectureCueAssignments } = require('../data/learningCues');
+const lectures = require('../data/lectures');
 
 async function migrate() {
   await db.query(`
@@ -15,6 +16,16 @@ async function migrate() {
       video_url TEXT
     )
   `);
+
+  await db.query(`ALTER TABLE lectures ADD COLUMN IF NOT EXISTS available_on DATE`);
+
+  // Sync each lecture's watchable day from data/lectures.js without reseeding
+  for (const lecture of lectures) {
+    await db.query(
+      `UPDATE lectures SET available_on = $1 WHERE id = $2`,
+      [lecture.availableOn ?? null, lecture.id]
+    );
+  }
 
   await db.query(`
     CREATE TABLE IF NOT EXISTS users (
@@ -55,6 +66,19 @@ async function migrate() {
       lecture_id INTEGER NOT NULL REFERENCES lectures(id) ON DELETE CASCADE,
       watched_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       PRIMARY KEY (user_id, lecture_id)
+    )
+  `);
+
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS cue_playback_logs (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      lecture_id INTEGER NOT NULL REFERENCES lectures(id) ON DELETE CASCADE,
+      playlist_id TEXT NOT NULL,
+      event TEXT NOT NULL CHECK (event IN ('selected', 'play', 'pause', 'end')),
+      video_time REAL,
+      audio_playing BOOLEAN,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
 

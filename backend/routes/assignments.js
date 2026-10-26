@@ -25,6 +25,20 @@ router.post("/", async (req, res) => {
       });
     }
 
+    // Each cue can only belong to one lecture
+    const taken = await db.query(
+      `SELECT lecture_id FROM lecture_playlist
+       WHERE playlist_id = $1 AND lecture_id <> $2`,
+      [playlistId, lectureId]
+    );
+
+    if (taken.rows.length > 0) {
+      return res.status(409).json({
+        success: false,
+        message: "This learning cue is already assigned to another lecture",
+      });
+    }
+
     // Insert or update assignment
     await db.query(
       `

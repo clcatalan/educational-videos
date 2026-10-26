@@ -115,4 +115,66 @@ router.post("/:id/watched", async (req, res) => {
   }
 });
 
+const CUE_EVENTS = ["selected", "play", "pause", "end"];
+
+/*
+Log which learning cue track was selected and played during a lecture.
+Every event is kept as its own row so a full playback history is available.
+*/
+router.post("/:id/cue-logs", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { lectureId, playlistId, event, videoTime, audioPlaying } = req.body;
+
+    if (!lectureId || !playlistId || !event) {
+      return res.status(400).json({ message: "lectureId, playlistId and event are required" });
+    }
+
+    if (!CUE_EVENTS.includes(event)) {
+      return res.status(400).json({ message: "Unknown cue event" });
+    }
+
+    await db.query(
+      `INSERT INTO cue_playback_logs
+       (user_id, lecture_id, playlist_id, event, video_time, audio_playing)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [id, lectureId, playlistId, event, videoTime ?? null, audioPlaying ?? null]
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to record cue playback" });
+  }
+});
+
+/*
+Get a user's cue playback history, most recent first.
+*/
+router.get("/:id/cue-logs", async (req, res) => {
+  try {
+    const result = await db.query(
+      `SELECT
+         c.id,
+         c.lecture_id AS "lectureId",
+         l.title,
+         c.playlist_id AS "playlistId",
+         c.event,
+         c.video_time AS "videoTime",
+         c.audio_playing AS "audioPlaying",
+         c.created_at AS "createdAt"
+       FROM cue_playback_logs c
+       JOIN lectures l ON l.id = c.lecture_id
+       WHERE c.user_id = $1
+       ORDER BY c.created_at DESC`,
+      [req.params.id]
+    );
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to fetch cue playback logs" });
+  }
+});
+
 module.exports = router;

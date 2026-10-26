@@ -9,7 +9,7 @@ const learningCues = {
 const lectureCueAssignments = [
   { lectureId: 1, cueId: "piano" },
   { lectureId: 2, cueId: "lofi" },
-  { lectureId: 3, cueId: "lofi" },
+  { lectureId: 3, cueId: "forest" },
   { lectureId: 4, cueId: "ocean" },
 ];
 

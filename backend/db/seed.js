@@ -8,8 +8,8 @@ async function seed() {
 
   for (const lecture of lectures) {
     await db.query(
-      `INSERT INTO lectures (id, title, description, instructor, duration, category, thumbnail, video_url)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      `INSERT INTO lectures (id, title, description, instructor, duration, category, thumbnail, video_url, available_on)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
       [
         lecture.id,
         lecture.title,
@@ -19,6 +19,7 @@ async function seed() {
         lecture.category,
         lecture.thumbnail,
         lecture.videoUrl,
+        lecture.availableOn ?? null,
       ]
     );
   }

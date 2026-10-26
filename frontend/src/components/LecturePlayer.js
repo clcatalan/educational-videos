@@ -4,6 +4,7 @@ import LearningCue from "./LearningCue";
 import QuizConfirmDialog from "./QuizConfirmDialog";
 import { useAuth } from '../context/AuthContext';
 import YouTubePlayer from "./YouTubePlayer";
+import { availabilityMessage } from "../utils/lectureAvailability";
 
 function LecturePlayer() {
   const { id } = useParams();
@@ -53,6 +54,17 @@ function LecturePlayer() {
     }
   };
 
+  // Record which cue track was selected/played and where in the video
+  const logCueEvent = (event, playlistId, { videoTime, audioPlaying } = {}) => {
+    if (!playlistId) return;
+
+    fetch(`/api/users/${currentUser.id}/cue-logs`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ lectureId: lecture.id, playlistId, event, videoTime, audioPlaying }),
+    }).catch((err) => console.error("Error recording cue playback:", err));
+  };
+
   if (loading) {
     return <div className="loading">Loading lecture...</div>;
   }
@@ -61,6 +73,22 @@ function LecturePlayer() {
     return (
       <div className="error-container">
         <h2>Lecture not found</h2>
+
+        <button onClick={() => navigate("/")}>
+          Back to Lectures
+        </button>
+      </div>
+    );
+  }
+
+  const lockedMessage = availabilityMessage(lecture);
+
+  if (lockedMessage) {
+    return (
+      <div className="error-container">
+        <h2>🔒 {lecture.title}</h2>
+
+        <p>{lockedMessage}</p>
 
         <button onClick={() => navigate("/")}>
           Back to Lectures
@@ -97,13 +125,26 @@ function LecturePlayer() {
               ) : (
               <YouTubePlayer
                 videoUrl={lecture.videoUrl}
-                onPlay={() => {
-                  audioRef.current?.play();
+                onPlay={(e) => {
+                  const videoTime = e.target.getCurrentTime();
+                  const audio = audioRef.current;
+
+                  if (!audio) {
+                    logCueEvent("play", music?.id, { videoTime, audioPlaying: false });
+                    return;
+                  }
+
+                  // play() rejects if the browser blocks it, so log the real outcome
+                  audio.play()
+                    .then(() => logCueEvent("play", music?.id, { videoTime, audioPlaying: true }))
+                    .catch(() => logCueEvent("play", music?.id, { videoTime, audioPlaying: false }));
                 }}
-                onPause={() => {
+                onPause={(e) => {
                   audioRef.current?.pause();
+                  logCueEvent("pause", music?.id, { videoTime: e.target.getCurrentTime(), audioPlaying: false });
                 }}
-                onEnd={() => {
+                onEnd={(e) => {
+                  logCueEvent("end", music?.id, { videoTime: e.target.getCurrentTime(), audioPlaying: false });
                   if (audioRef.current) {
                     audioRef.current.pause();
                     audioRef.current.currentTime = 0;
@@ -136,7 +177,10 @@ function LecturePlayer() {
             lectureId={lecture.id}
             onMusicChanged={setAssignedMusic}
             locked={cueConfirmed}
-            onConfirm={() => setCueConfirmed(true)}
+            onConfirm={(confirmedMusic) => {
+              setCueConfirmed(true);
+              logCueEvent("selected", confirmedMusic.id);
+            }}
           />
         </div>
 

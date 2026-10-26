@@ -22,6 +22,14 @@ app.use('/study-audio', express.static(
 ));
 app.use("/api/sleep-stage", sleepStageRoutes);
 
+// A lecture is only watchable on its available_on day (no date = always).
+// The date is formatted in SQL so it isn't shifted by JS timezone handling.
+const LECTURE_COLUMNS = `
+  *,
+  to_char(available_on, 'YYYY-MM-DD') AS available_on_text,
+  (available_on IS NULL OR available_on = CURRENT_DATE) AS available
+`;
+
 const toLecture = row => ({
   id: row.id,
   title: row.title,
@@ -30,7 +38,10 @@ const toLecture = row => ({
   duration: row.duration,
   category: row.category,
   thumbnail: row.thumbnail,
-  videoUrl: row.video_url,
+  // Withheld outside the lecture's day so it can't be played early or late
+  videoUrl: row.available ? row.video_url : null,
+  availableOn: row.available_on_text,
+  available: row.available,
 });
 
 // Routes
@@ -44,8 +55,8 @@ app.get('/api/lectures', async (req, res) => {
     const { category } = req.query;
 
     const result = category && category !== 'all'
-      ? await db.query('SELECT * FROM lectures WHERE category ILIKE $1 ORDER BY id', [category])
-      : await db.query('SELECT * FROM lectures ORDER BY id');
+      ? await db.query(`SELECT ${LECTURE_COLUMNS} FROM lectures WHERE category ILIKE $1 ORDER BY id`, [category])
+      : await db.query(`SELECT ${LECTURE_COLUMNS} FROM lectures ORDER BY id`);
 
     res.json(result.rows.map(toLecture));
   } catch (error) {
@@ -57,7 +68,7 @@ app.get('/api/lectures', async (req, res) => {
 // Get lecture by ID
 app.get('/api/lectures/:id', async (req, res) => {
   try {
-    const result = await db.query('SELECT * FROM lectures WHERE id = $1', [req.params.id]);
+    const result = await db.query(`SELECT ${LECTURE_COLUMNS} FROM lectures WHERE id = $1`, [req.params.id]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ message: 'Lecture not found' });

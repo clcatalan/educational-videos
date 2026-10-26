@@ -1,18 +1,25 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { availabilityMessage } from '../utils/lectureAvailability';
 
 function LectureCard({ lecture }) {
   const navigate = useNavigate();
+  const lockedMessage = availabilityMessage(lecture);
 
   const handleClick = () => {
+    // Lectures can only be opened on their scheduled day
+    if (lockedMessage) return;
     navigate(`/lecture/${lecture.id}`);
   };
 
   return (
-    <div className="lecture-card" onClick={handleClick}>
+    <div className={`lecture-card ${lockedMessage ? 'locked' : ''}`} onClick={handleClick}>
       <div className="lecture-thumbnail">
         <img src={lecture.thumbnail} alt={lecture.title} />
         <div className="duration-badge">{lecture.duration}</div>
+        {lockedMessage && (
+          <div className="locked-overlay">🔒 {lockedMessage}</div>
+        )}
       </div>
       <div className="lecture-info">
         <span className="category-badge">{lecture.category}</span>
