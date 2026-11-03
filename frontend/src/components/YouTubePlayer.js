@@ -8,6 +8,7 @@ function getVideoId(url) {
 
 export default function YouTubePlayer({
   videoUrl,
+  onReady,
   onPlay,
   onPause,
   onEnd,
@@ -25,6 +26,7 @@ export default function YouTubePlayer({
     <YouTube
       videoId={getVideoId(videoUrl)}
       opts={opts}
+      onReady={onReady}
       onPlay={onPlay}
       onPause={onPause}
       onEnd={onEnd}

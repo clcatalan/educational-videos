@@ -2,11 +2,19 @@ import React, { useState } from 'react';
 import Login from './components/Login';
 import UsersTable from './components/UsersTable';
 import QuizManager from './components/QuizManager';
+import UserSchedule from './components/UserSchedule';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
 function AppContent() {
   const { currentUser, logout } = useAuth();
   const [view, setView] = useState('users');
+  // User whose schedule is open on the Users tab; null shows the table
+  const [selectedUser, setSelectedUser] = useState(null);
+
+  const showView = (next) => {
+    setView(next);
+    setSelectedUser(null);
+  };
 
   return (
     <div className="App">
@@ -25,13 +33,13 @@ function AppContent() {
           <div className="admin-tabs">
             <button
               className={`admin-tab-button ${view === 'users' ? 'active' : ''}`}
-              onClick={() => setView('users')}
+              onClick={() => showView('users')}
             >
               Users
             </button>
             <button
               className={`admin-tab-button ${view === 'quizzes' ? 'active' : ''}`}
-              onClick={() => setView('quizzes')}
+              onClick={() => showView('quizzes')}
             >
               Quiz Questions
             </button>
@@ -39,7 +47,15 @@ function AppContent() {
         )}
       </header>
 
-      {currentUser ? (view === 'users' ? <UsersTable /> : <QuizManager />) : <Login />}
+      {!currentUser ? (
+        <Login />
+      ) : view === 'quizzes' ? (
+        <QuizManager />
+      ) : selectedUser ? (
+        <UserSchedule user={selectedUser} onBack={() => setSelectedUser(null)} />
+      ) : (
+        <UsersTable onSelectUser={setSelectedUser} />
+      )}
     </div>
   );
 }

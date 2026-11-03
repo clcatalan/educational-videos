@@ -4,6 +4,8 @@ import LearningCue from "./LearningCue";
 import QuizConfirmDialog from "./QuizConfirmDialog";
 import { useAuth } from '../context/AuthContext';
 import YouTubePlayer from "./YouTubePlayer";
+import AttentionGate from "./AttentionGate";
+import useAttentionTracker from "../hooks/useAttentionTracker";
 import { availabilityMessage } from "../utils/lectureAvailability";
 
 function LecturePlayer() {
@@ -22,6 +24,19 @@ function LecturePlayer() {
   const [assignedMusic, setAssignedMusic] = useState(undefined);
 
   const audioRef = useRef(null);
+  const playerRef = useRef(null);
+
+  // Webcam off-task looking tracker; required before the video unlocks
+  const tracker = useAttentionTracker({
+    userId: currentUser?.id,
+    lectureId: lecture?.id,
+    getVideoTime: () => playerRef.current?.getCurrentTime(),
+  });
+
+  // The player unmounts if the camera is lost mid-video, so stop the cue with it
+  useEffect(() => {
+    if (tracker.status !== "ready") audioRef.current?.pause();
+  }, [tracker.status]);
 
   useEffect(() => {
     setCueConfirmed(false);
@@ -115,17 +130,25 @@ function LecturePlayer() {
         <div className="player-media-row">
           <div className="video-column">
             <div className="video-wrapper">
-              {!cueConfirmed ? (
+              {!cueConfirmed || tracker.status !== "ready" ? (
                 <div
                   className="video-locked"
                   style={{ backgroundImage: `url(${lecture.thumbnail})` }}
                 >
-                  <p>🎵 Select and confirm a Learning Cue track to start the video</p>
+                  {!cueConfirmed ? (
+                    <p>🎵 Select and confirm a Learning Cue track to start the video</p>
+                  ) : (
+                    <AttentionGate status={tracker.status} onEnable={tracker.start} />
+                  )}
                 </div>
               ) : (
               <YouTubePlayer
                 videoUrl={lecture.videoUrl}
+                onReady={(e) => {
+                  playerRef.current = e.target;
+                }}
                 onPlay={(e) => {
+                  tracker.setPlaying(true);
                   const videoTime = e.target.getCurrentTime();
                   const audio = audioRef.current;
 
@@ -140,10 +163,12 @@ function LecturePlayer() {
                     .catch(() => logCueEvent("play", music?.id, { videoTime, audioPlaying: false }));
                 }}
                 onPause={(e) => {
+                  tracker.setPlaying(false);
                   audioRef.current?.pause();
                   logCueEvent("pause", music?.id, { videoTime: e.target.getCurrentTime(), audioPlaying: false });
                 }}
                 onEnd={(e) => {
+                  tracker.setPlaying(false);
                   logCueEvent("end", music?.id, { videoTime: e.target.getCurrentTime(), audioPlaying: false });
                   if (audioRef.current) {
                     audioRef.current.pause();
@@ -161,12 +186,6 @@ function LecturePlayer() {
                     })
                     .catch((err) => console.error("Error recording watched lecture:", err));
                   setShowQuizDialog(true);
-
-                  fetch(`/api/users/${currentUser.id}/watched`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ lectureId: lecture.id }),
-                  }).catch((err) => console.error("Error recording watched lecture:", err));
                 }}
               />
               )}

@@ -203,3 +203,33 @@
     font-size: 0.75rem;
     color: #666;
 }
+
+.attention-gate {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    max-width: 480px;
+    padding: 0 20px;
+    color: white;
+    text-align: center;
+}
+
+.attention-gate p {
+    padding: 0;
+}
+
+.attention-gate small {
+    color: rgba(255, 255, 255, 0.8);
+    line-height: 1.4;
+}
+
+.attention-gate .attention-gate-error {
+    color: #ffb4b4;
+}
+
+.attention-gate button:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}

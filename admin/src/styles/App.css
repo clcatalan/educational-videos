@@ -241,19 +241,64 @@ body {
   font-size: 0.9rem;
 }
 
-.admin-list {
-  list-style: none;
+.admin-row-clickable {
+  cursor: pointer;
+  transition: background 0.2s;
 }
 
-.admin-list li {
-  padding: 3px 0;
+.admin-row-clickable:hover,
+.admin-row-clickable:focus-visible {
+  background: #f5f7fa;
+  outline: none;
+}
+
+/* User Schedule */
+.schedule-back-button {
+  margin-bottom: 1rem;
+  padding: 8px 16px;
+  background: white;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  color: #333;
   font-size: 0.9rem;
+  cursor: pointer;
 }
 
-.admin-watched-at {
-  display: block;
-  color: #999;
-  font-size: 0.78rem;
+.schedule-back-button:hover {
+  background: #f5f5f5;
+}
+
+.schedule-date {
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.schedule-status {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.schedule-watched {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.schedule-today {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.schedule-upcoming {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.schedule-missed {
+  background: #fee2e2;
+  color: #991b1b;
 }
 
 /* Admin Tabs */

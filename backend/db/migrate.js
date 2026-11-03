@@ -82,6 +82,28 @@ async function migrate() {
     )
   `);
 
+  // One row per second of playback from the webcam off-task looking tracker.
+  // Raw head pose / blendshape values are kept so the on-screen rule can be re-thresholded later.
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS attention_samples (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      lecture_id INTEGER NOT NULL REFERENCES lectures(id) ON DELETE CASCADE,
+      session_id TEXT NOT NULL,
+      video_time REAL,
+      on_screen_ratio REAL NOT NULL CHECK (on_screen_ratio BETWEEN 0 AND 1),
+      face_present BOOLEAN NOT NULL,
+      yaw REAL,
+      pitch REAL,
+      blink REAL,
+      look_h REAL,
+      look_v REAL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await db.query(`CREATE INDEX IF NOT EXISTS attention_samples_user_lecture_idx ON attention_samples (user_id, lecture_id)`);
+
   await db.query(`
     CREATE TABLE IF NOT EXISTS lecture_playlist (
       lecture_id INTEGER PRIMARY KEY REFERENCES lectures(id) ON DELETE CASCADE,
@@ -160,7 +182,7 @@ async function migrate() {
     ON CONFLICT (username) DO UPDATE SET is_admin = true
   `);
 
-  console.log('Migration complete: lectures, users, and watched_lectures tables ready (test user "P01", admin user "admin" seeded)');
+  console.log('Migration complete: lectures, users, watched_lectures and attention_samples tables ready (test user "P01", admin user "admin" seeded)');
   process.exit(0);
 }
 

@@ -1,5 +1,6 @@
 const express = require("express");
 const db = require("../db");
+const { getAttentionSessions } = require("../db/attention");
 
 const router = express.Router();
 
@@ -23,6 +24,31 @@ async function requireAdmin(req, res, next) {
   }
 
   next();
+}
+
+/*
+Combines every viewing session of the same user + lecture into one
+off-task looking summary, keyed by "userId:lectureId".
+*/
+function attentionByUserLecture(sessions) {
+  const totals = new Map();
+
+  for (const session of sessions) {
+    const key = `${session.userId}:${session.lectureId}`;
+    const total = totals.get(key) ?? { secondsTracked: 0, offScreenSeconds: 0, lookAwayEpisodes: 0, sessions: 0 };
+
+    total.secondsTracked += session.secondsTracked;
+    total.offScreenSeconds += session.offScreenSeconds;
+    total.lookAwayEpisodes += session.lookAwayEpisodes;
+    total.sessions += 1;
+    totals.set(key, total);
+  }
+
+  for (const total of totals.values()) {
+    total.onScreenPct = Math.round(1000 * (1 - total.offScreenSeconds / total.secondsTracked)) / 10;
+  }
+
+  return totals;
 }
 
 /*
@@ -53,6 +79,8 @@ router.get("/users", requireAdmin, async (req, res) => {
       ORDER BY u.id
     `);
 
+    const attention = attentionByUserLecture(await getAttentionSessions());
+
     res.json(result.rows.map(row => ({
       id: row.id,
       username: row.username,
@@ -60,7 +88,10 @@ router.get("/users", requireAdmin, async (req, res) => {
       preferredLectureIds: row.preferred_lecture_ids,
       preferencesSet: row.preferences_set,
       createdAt: row.created_at,
-      watchedLectures: row.watched_lectures,
+      watchedLectures: row.watched_lectures.map(watched => ({
+        ...watched,
+        attention: attention.get(`${row.id}:${watched.id}`) ?? null,
+      })),
     })));
   } catch (err) {
     console.error(err);

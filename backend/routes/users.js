@@ -2,6 +2,7 @@ const express = require("express");
 const db = require("../db");
 const { toUser } = require("../serializers/user");
 const { learningCues } = require("../data/learningCues");
+const { getAttentionSessions } = require("../db/attention");
 
 const router = express.Router();
 
@@ -174,6 +175,113 @@ router.get("/:id/cue-logs", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Failed to fetch cue playback logs" });
+  }
+});
+
+const MAX_ATTENTION_BATCH = 120;
+// Values per inserted row: user, lecture, session + 8 sample fields
+const ATTENTION_COLUMNS = 11;
+
+const isFiniteOrNull = value => value === null || value === undefined || Number.isFinite(value);
+
+const isValidSample = sample =>
+  sample &&
+  Number.isFinite(sample.onScreenRatio) &&
+  sample.onScreenRatio >= 0 &&
+  sample.onScreenRatio <= 1 &&
+  typeof sample.facePresent === "boolean" &&
+  ["videoTime", "yaw", "pitch", "blink", "lookH", "lookV"].every(key => isFiniteOrNull(sample[key]));
+
+/*
+Store a batch of 1-second webcam attention samples for one viewing session.
+Only derived numbers are sent - no camera frames ever reach the server.
+*/
+router.post("/:id/attention-samples", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { lectureId, sessionId, samples } = req.body;
+
+    if (!lectureId || !sessionId || !Array.isArray(samples)) {
+      return res.status(400).json({ message: "lectureId, sessionId and samples are required" });
+    }
+
+    if (samples.length === 0) {
+      return res.json({ success: true });
+    }
+
+    if (samples.length > MAX_ATTENTION_BATCH) {
+      return res.status(400).json({ message: `At most ${MAX_ATTENTION_BATCH} samples per batch` });
+    }
+
+    if (!samples.every(isValidSample)) {
+      return res.status(400).json({ message: "Invalid attention sample" });
+    }
+
+    const params = [];
+    const rows = samples.map((sample, i) => {
+      params.push(
+        id, lectureId, sessionId,
+        sample.videoTime ?? null, sample.onScreenRatio, sample.facePresent,
+        sample.yaw ?? null, sample.pitch ?? null, sample.blink ?? null,
+        sample.lookH ?? null, sample.lookV ?? null
+      );
+      const base = i * ATTENTION_COLUMNS;
+      return `(${Array.from({ length: ATTENTION_COLUMNS }, (_, j) => `$${base + j + 1}`).join(", ")})`;
+    });
+
+    await db.query(
+      `INSERT INTO attention_samples
+       (user_id, lecture_id, session_id, video_time, on_screen_ratio, face_present, yaw, pitch, blink, look_h, look_v)
+       VALUES ${rows.join(", ")}`,
+      params
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to record attention samples" });
+  }
+});
+
+/*
+Off-task looking summary for each of a user's viewing sessions, most recent first.
+*/
+router.get("/:id/attention", async (req, res) => {
+  try {
+    res.json(await getAttentionSessions({ userId: req.params.id }));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to fetch attention summary" });
+  }
+});
+
+/*
+Raw per-second attention samples for one lecture, for export and analysis.
+*/
+router.get("/:id/attention/:lectureId", async (req, res) => {
+  try {
+    const result = await db.query(
+      `SELECT
+         session_id AS "sessionId",
+         video_time AS "videoTime",
+         on_screen_ratio AS "onScreenRatio",
+         face_present AS "facePresent",
+         yaw,
+         pitch,
+         blink,
+         look_h AS "lookH",
+         look_v AS "lookV",
+         created_at AS "createdAt"
+       FROM attention_samples
+       WHERE user_id = $1 AND lecture_id = $2
+       ORDER BY id`,
+      [req.params.id, req.params.lectureId]
+    );
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to fetch attention samples" });
   }
 });
 
