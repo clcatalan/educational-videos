@@ -19,10 +19,11 @@ async function migrate() {
 
   await db.query(`ALTER TABLE lectures ADD COLUMN IF NOT EXISTS available_on DATE`);
 
-  // Sync each lecture's watchable day from data/lectures.js without reseeding
+  // Fill in each lecture's watchable day from data/lectures.js without reseeding.
+  // Only unscheduled lectures are touched, so dates set in the admin portal are kept.
   for (const lecture of lectures) {
     await db.query(
-      `UPDATE lectures SET available_on = $1 WHERE id = $2`,
+      `UPDATE lectures SET available_on = $1 WHERE id = $2 AND available_on IS NULL`,
       [lecture.availableOn ?? null, lecture.id]
     );
   }

@@ -3,6 +3,7 @@ import Login from './components/Login';
 import UsersTable from './components/UsersTable';
 import QuizManager from './components/QuizManager';
 import UserSchedule from './components/UserSchedule';
+import LectureScheduleManager from './components/LectureScheduleManager';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
 function AppContent() {
@@ -38,6 +39,12 @@ function AppContent() {
               Users
             </button>
             <button
+              className={`admin-tab-button ${view === 'schedule' ? 'active' : ''}`}
+              onClick={() => showView('schedule')}
+            >
+              Lecture Schedule
+            </button>
+            <button
               className={`admin-tab-button ${view === 'quizzes' ? 'active' : ''}`}
               onClick={() => showView('quizzes')}
             >
@@ -51,6 +58,8 @@ function AppContent() {
         <Login />
       ) : view === 'quizzes' ? (
         <QuizManager />
+      ) : view === 'schedule' ? (
+        <LectureScheduleManager />
       ) : selectedUser ? (
         <UserSchedule user={selectedUser} onBack={() => setSelectedUser(null)} />
       ) : (

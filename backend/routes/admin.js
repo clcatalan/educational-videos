@@ -1,6 +1,5 @@
 const express = require("express");
 const db = require("../db");
-const { getAttentionSessions } = require("../db/attention");
 
 const router = express.Router();
 
@@ -24,31 +23,6 @@ async function requireAdmin(req, res, next) {
   }
 
   next();
-}
-
-/*
-Combines every viewing session of the same user + lecture into one
-off-task looking summary, keyed by "userId:lectureId".
-*/
-function attentionByUserLecture(sessions) {
-  const totals = new Map();
-
-  for (const session of sessions) {
-    const key = `${session.userId}:${session.lectureId}`;
-    const total = totals.get(key) ?? { secondsTracked: 0, offScreenSeconds: 0, lookAwayEpisodes: 0, sessions: 0 };
-
-    total.secondsTracked += session.secondsTracked;
-    total.offScreenSeconds += session.offScreenSeconds;
-    total.lookAwayEpisodes += session.lookAwayEpisodes;
-    total.sessions += 1;
-    totals.set(key, total);
-  }
-
-  for (const total of totals.values()) {
-    total.onScreenPct = Math.round(1000 * (1 - total.offScreenSeconds / total.secondsTracked)) / 10;
-  }
-
-  return totals;
 }
 
 /*
@@ -79,8 +53,6 @@ router.get("/users", requireAdmin, async (req, res) => {
       ORDER BY u.id
     `);
 
-    const attention = attentionByUserLecture(await getAttentionSessions());
-
     res.json(result.rows.map(row => ({
       id: row.id,
       username: row.username,
@@ -88,14 +60,45 @@ router.get("/users", requireAdmin, async (req, res) => {
       preferredLectureIds: row.preferred_lecture_ids,
       preferencesSet: row.preferences_set,
       createdAt: row.created_at,
-      watchedLectures: row.watched_lectures.map(watched => ({
-        ...watched,
-        attention: attention.get(`${row.id}:${watched.id}`) ?? null,
-      })),
+      watchedLectures: row.watched_lectures,
     })));
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Failed to fetch users" });
+  }
+});
+
+/*
+Set the single day a lecture can be watched ("YYYY-MM-DD"), or null to
+make it watchable any day. Applies to every participant.
+*/
+router.put("/lectures/:lectureId/schedule", requireAdmin, async (req, res) => {
+  const { lectureId } = req.params;
+  const { availableOn } = req.body;
+
+  if (availableOn !== null && !/^\d{4}-\d{2}-\d{2}$/.test(availableOn ?? "")) {
+    return res.status(400).json({ message: "availableOn must be a YYYY-MM-DD date or null" });
+  }
+
+  try {
+    const result = await db.query(
+      `UPDATE lectures SET available_on = $1::date WHERE id = $2
+       RETURNING to_char(available_on, 'YYYY-MM-DD') AS available_on`,
+      [availableOn, lectureId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Lecture not found" });
+    }
+
+    res.json({ lectureId: Number(lectureId), availableOn: result.rows[0].available_on });
+  } catch (err) {
+    // 22008 = date out of range, e.g. 2026-02-30
+    if (err.code === "22008") {
+      return res.status(400).json({ message: "That date doesn't exist" });
+    }
+    console.error(err);
+    res.status(500).json({ message: "Failed to save lecture schedule" });
   }
 });
 

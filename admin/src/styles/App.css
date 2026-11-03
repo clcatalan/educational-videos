@@ -301,6 +301,17 @@ body {
   color: #991b1b;
 }
 
+.attention-score {
+  display: block;
+  font-weight: 600;
+}
+
+.attention-detail {
+  display: block;
+  color: #999;
+  font-size: 0.78rem;
+}
+
 /* Admin Tabs */
 .admin-tabs {
   display: flex;
@@ -342,6 +353,10 @@ body {
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
+}
+
+.schedule-clear-button {
+  margin-right: auto;
 }
 
 .quiz-validation-error {

@@ -1,22 +1,5 @@
 import React, { useState, useEffect } from 'react';
-
-// availableOn is a plain "YYYY-MM-DD" day; parse it as a local date so it
-// isn't shifted a day by timezone the way new Date("YYYY-MM-DD") (UTC) is.
-function parseDay(availableOn) {
-  const [year, month, day] = availableOn.split('-').map(Number);
-  return new Date(year, month - 1, day);
-}
-
-function formatDay(availableOn) {
-  if (!availableOn) return 'Any day';
-
-  return parseDay(availableOn).toLocaleDateString(undefined, {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-}
+import { parseDay, formatDay } from '../utils/dates';
 
 function scheduleStatus(lecture, watchedAt) {
   if (watchedAt) return { label: 'Watched', className: 'schedule-watched' };
@@ -31,12 +14,48 @@ function scheduleStatus(lecture, watchedAt) {
     : { label: 'Missed', className: 'schedule-missed' };
 }
 
+// Combines every viewing session of a lecture into one off-task looking
+// summary from the webcam tracker, keyed by lecture id
+function attentionByLecture(sessions) {
+  const totals = {};
+
+  for (const session of sessions) {
+    const total = totals[session.lectureId] ?? { secondsTracked: 0, offScreenSeconds: 0, lookAwayEpisodes: 0 };
+
+    total.secondsTracked += session.secondsTracked;
+    total.offScreenSeconds += session.offScreenSeconds;
+    total.lookAwayEpisodes += session.lookAwayEpisodes;
+    totals[session.lectureId] = total;
+  }
+
+  for (const total of Object.values(totals)) {
+    total.onScreenPct = Math.round(1000 * (1 - total.offScreenSeconds / total.secondsTracked)) / 10;
+  }
+
+  return totals;
+}
+
+function AttentionScore({ attention }) {
+  if (!attention) return <span className="admin-empty">Not tracked</span>;
+
+  const minutes = Math.round(attention.secondsTracked / 60);
+  const lookAways = `${attention.lookAwayEpisodes} look-away${attention.lookAwayEpisodes === 1 ? '' : 's'}`;
+
+  return (
+    <>
+      <span className="attention-score">{attention.onScreenPct}%</span>
+      <span className="attention-detail">{lookAways} · {minutes}m tracked</span>
+    </>
+  );
+}
+
 /*
 The lectures a participant will watch, in the order they become available.
 Mirrors the participant app: an empty preference list means every lecture.
 */
 function UserSchedule({ user, onBack }) {
   const [lectures, setLectures] = useState([]);
+  const [attention, setAttention] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -45,13 +64,28 @@ function UserSchedule({ user, onBack }) {
       try {
         setLoading(true);
 
-        const response = await fetch('/api/lectures');
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.message || 'Failed to fetch lectures');
+        const [lecturesResponse, attentionResponse] = await Promise.all([
+          fetch('/api/lectures'),
+          fetch(`/api/users/${user.id}/attention`),
+        ]);
+
+        const lecturesData = await lecturesResponse.json();
+        if (!lecturesResponse.ok) {
+          throw new Error(lecturesData.message || 'Failed to fetch lectures');
         }
 
-        setLectures(data);
+        setLectures(lecturesData);
+
+        // Scores are optional here; the schedule still shows if they fail
+        try {
+          if (!attentionResponse.ok) {
+            throw new Error(`HTTP ${attentionResponse.status}`);
+          }
+          setAttention(attentionByLecture(await attentionResponse.json()));
+        } catch (err) {
+          console.error('Failed to fetch attention scores:', err);
+          setAttention(null);
+        }
       } catch (err) {
         setError(err.message);
       } finally {
@@ -60,7 +94,7 @@ function UserSchedule({ user, onBack }) {
     };
 
     load();
-  }, []);
+  }, [user.id]);
 
   if (loading) {
     return <div className="loading">Loading schedule...</div>;
@@ -98,15 +132,16 @@ function UserSchedule({ user, onBack }) {
         <table className="admin-table">
           <thead>
             <tr>
-              <th>Date</th>
               <th>Lecture</th>
+              <th>Scheduled Date</th>
               <th>Status</th>
+              <th>Attention Score</th>
             </tr>
           </thead>
           <tbody>
             {schedule.length === 0 ? (
               <tr>
-                <td colSpan={3}><span className="admin-empty">No lectures scheduled</span></td>
+                <td colSpan={4}><span className="admin-empty">No lectures scheduled</span></td>
               </tr>
             ) : (
               schedule.map(lecture => {
@@ -114,9 +149,14 @@ function UserSchedule({ user, onBack }) {
 
                 return (
                   <tr key={lecture.id}>
-                    <td className="schedule-date">{formatDay(lecture.availableOn)}</td>
                     <td>{lecture.title}</td>
+                    <td className="schedule-date">{formatDay(lecture.availableOn)}</td>
                     <td><span className={`schedule-status ${status.className}`}>{status.label}</span></td>
+                    <td>
+                      {attention === null
+                        ? <span className="admin-empty">Unavailable</span>
+                        : <AttentionScore attention={attention[lecture.id]} />}
+                    </td>
                   </tr>
                 );
               })
