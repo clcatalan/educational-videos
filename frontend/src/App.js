@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import LectureList from './components/LectureList';
 import LecturePlayer from './components/LecturePlayer';
-import QuizStub from './components/QuizStub';
+import QuizPage from './components/QuizPage';
 import PreferencesDialog from './components/PreferencesDialog';
 import Login from './components/Login';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -67,9 +67,14 @@ function AppRoutes() {
             <LecturePlayer />
           </ProtectedRoute>
         } />
-        <Route path="/lecture/:id/quiz" element={
+        <Route path="/lecture/:id/pre-sleep-quiz" element={
           <ProtectedRoute>
-            <QuizStub />
+            <QuizPage key="pre_sleep" phase="pre_sleep" />
+          </ProtectedRoute>
+        } />
+        <Route path="/lecture/:id/post-sleep-quiz" element={
+          <ProtectedRoute>
+            <QuizPage key="post_sleep" phase="post_sleep" />
           </ProtectedRoute>
         } />
       </Routes>

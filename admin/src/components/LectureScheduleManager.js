@@ -80,23 +80,37 @@ Sets the one day each lecture can be watched. The date is shared by every
 participant; the backend withholds the video on any other day.
 */
 function LectureScheduleManager() {
+  const { currentUser } = useAuth();
   const [lectures, setLectures] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [editingLecture, setEditingLecture] = useState(null);
+  const [allUnlocked, setAllUnlocked] = useState(false);
+  const [savingUnlock, setSavingUnlock] = useState(false);
+  const [unlockError, setUnlockError] = useState('');
 
   useEffect(() => {
     const load = async () => {
       try {
         setLoading(true);
 
-        const response = await fetch('/api/lectures');
-        const data = await response.json();
-        if (!response.ok) {
+        const [lecturesResponse, settingsResponse] = await Promise.all([
+          fetch('/api/lectures'),
+          fetch('/api/admin/settings/schedule', { headers: { 'x-user-id': currentUser.id } }),
+        ]);
+
+        const data = await lecturesResponse.json();
+        if (!lecturesResponse.ok) {
           throw new Error(data.message || 'Failed to fetch lectures');
         }
 
+        const settings = await settingsResponse.json();
+        if (!settingsResponse.ok) {
+          throw new Error(settings.message || 'Failed to fetch schedule settings');
+        }
+
         setLectures(data);
+        setAllUnlocked(settings.allLecturesUnlocked);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -105,7 +119,29 @@ function LectureScheduleManager() {
     };
 
     load();
-  }, []);
+  }, [currentUser.id]);
+
+  const toggleAllUnlocked = async () => {
+    const next = !allUnlocked;
+    setSavingUnlock(true);
+    setUnlockError('');
+    try {
+      const response = await fetch('/api/admin/settings/schedule', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'x-user-id': currentUser.id },
+        body: JSON.stringify({ allLecturesUnlocked: next }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to save setting');
+      }
+      setAllUnlocked(data.allLecturesUnlocked);
+    } catch (err) {
+      setUnlockError(err.message);
+    } finally {
+      setSavingUnlock(false);
+    }
+  };
 
   if (loading) {
     return <div className="loading">Loading lectures...</div>;
@@ -120,6 +156,27 @@ function LectureScheduleManager() {
       <h2>Lecture Schedule</h2>
       <p className="admin-subtitle">Set the day each lecture can be watched, for all participants</p>
 
+      <div className="schedule-unlock-panel">
+        <label className="toggle-switch">
+          <input
+            type="checkbox"
+            checked={allUnlocked}
+            onChange={toggleAllUnlocked}
+            disabled={savingUnlock}
+          />
+          <span className="toggle-slider" />
+        </label>
+        <div>
+          <strong>Unlock all lectures</strong>
+          <p className="schedule-unlock-hint">
+            {allUnlocked
+              ? 'Every lecture can be watched on any day. Scheduled dates below are ignored.'
+              : 'Each lecture can only be watched on its scheduled date.'}
+          </p>
+          {unlockError && <p className="quiz-validation-error">{unlockError}</p>}
+        </div>
+      </div>
+
       <div className="admin-table-wrapper">
         <table className="admin-table">
           <thead>
@@ -133,7 +190,7 @@ function LectureScheduleManager() {
             {lectures.map(lecture => (
               <tr key={lecture.id}>
                 <td>{lecture.title}</td>
-                <td className="schedule-date">
+                <td className={`schedule-date ${allUnlocked ? 'schedule-date-ignored' : ''}`}>
                   {lecture.availableOn
                     ? formatDay(lecture.availableOn)
                     : <span className="admin-empty">Any day</span>}

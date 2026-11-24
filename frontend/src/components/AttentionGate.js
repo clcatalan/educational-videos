@@ -9,6 +9,14 @@ const MESSAGES = {
 function AttentionGate({ status, onEnable }) {
   const requesting = status === "requesting";
 
+  if (status === "finished") {
+    return (
+      <div className="attention-gate">
+        <p>✅ You've finished this lecture. The camera has been turned off.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="attention-gate">
       <p>📷 This study measures whether you're looking at the lecture, using your webcam.</p>

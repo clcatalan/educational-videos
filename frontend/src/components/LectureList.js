@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import LectureCard from './LectureCard';
+import { useAuth } from '../context/AuthContext';
 
 function LectureList({ preferredIds = [] }) {
   const [lectures, setLectures] = useState([]);
@@ -7,6 +8,7 @@ function LectureList({ preferredIds = [] }) {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const { currentUser } = useAuth();
 
   useEffect(() => {
     fetchLectures();
@@ -19,7 +21,8 @@ function LectureList({ preferredIds = [] }) {
       const url = selectedCategory === 'all' 
         ? '/api/lectures' 
         : `/api/lectures?category=${selectedCategory}`;
-      const response = await fetch(url);
+      // The user id gives each participant their own SM-2 review dates
+      const response = await fetch(url, { headers: { 'x-user-id': currentUser.id } });
       const data = await response.json();
       setLectures(data);
       setLoading(false);

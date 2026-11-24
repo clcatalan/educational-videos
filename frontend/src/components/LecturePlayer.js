@@ -31,6 +31,15 @@ function LecturePlayer() {
     userId: currentUser?.id,
     lectureId: lecture?.id,
     getVideoTime: () => playerRef.current?.getCurrentTime(),
+    // What the participant actually hears: muted (or a paused cue track) counts as 0
+    getVolumes: () => {
+      const player = playerRef.current;
+      const audio = audioRef.current;
+      return {
+        videoVolume: player ? (player.isMuted() ? 0 : player.getVolume()) : undefined,
+        audioVolume: audio ? (audio.paused || audio.muted ? 0 : Math.round(audio.volume * 100)) : 0,
+      };
+    },
   });
 
   // The player unmounts if the camera is lost mid-video, so stop the cue with it
@@ -48,7 +57,10 @@ function LecturePlayer() {
     try {
       setLoading(true);
 
-      const response = await fetch(`/api/lectures/${id}`);
+      // The user id applies this participant's SM-2 review date
+      const response = await fetch(`/api/lectures/${id}`, {
+        headers: { "x-user-id": currentUser.id },
+      });
 
       if (!response.ok) {
         throw new Error("Lecture not found");
@@ -58,11 +70,6 @@ function LecturePlayer() {
 
       setLecture(data);
       setLoading(false);
-
-      fetch(`/api/lectures/${data.id}/quiz`)
-        .then((res) => (res.ok ? res.json() : null))
-        .then((quiz) => setLecture((prev) => ({ ...prev, quizLink: quiz?.link ?? null })))
-        .catch(() => {});
     } catch (err) {
       console.error(err);
       setLoading(false);
@@ -168,12 +175,13 @@ function LecturePlayer() {
                   logCueEvent("pause", music?.id, { videoTime: e.target.getCurrentTime(), audioPlaying: false });
                 }}
                 onEnd={(e) => {
-                  tracker.setPlaying(false);
                   logCueEvent("end", music?.id, { videoTime: e.target.getCurrentTime(), audioPlaying: false });
                   if (audioRef.current) {
                     audioRef.current.pause();
                     audioRef.current.currentTime = 0;
                   }
+                  // Turns the camera off and records the attention score
+                  tracker.finish();
                   fetch(`/api/users/${currentUser.id}/watched`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -289,11 +297,7 @@ function LecturePlayer() {
       </div>
 
       {showQuizDialog && (
-        <QuizConfirmDialog
-          quizLink={lecture.quizLink}
-          onConfirm={() => navigate(`/lecture/${id}/quiz`)}
-          onDecline={() => setShowQuizDialog(false)}
-        />
+        <QuizConfirmDialog lectureId={lecture.id} />
       )}
     </div>
   );

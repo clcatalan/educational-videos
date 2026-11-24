@@ -312,6 +312,44 @@ body {
   font-size: 0.78rem;
 }
 
+/* Participant schedule: one card per lecture */
+.lecture-schedule-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.lecture-schedule-card {
+  padding: 1.25rem 1.5rem;
+}
+
+.lecture-schedule-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.lecture-schedule-header h3 {
+  color: #1f2937;
+  font-size: 1.05rem;
+}
+
+.lecture-schedule-header .schedule-status {
+  flex-shrink: 0;
+}
+
+.lecture-schedule-table th,
+.lecture-schedule-table td {
+  width: 20%;
+}
+
+.lecture-schedule-table td {
+  border-bottom: none;
+  padding-bottom: 4px;
+}
+
 /* Admin Tabs */
 .admin-tabs {
   display: flex;
@@ -357,6 +395,83 @@ body {
 
 .schedule-clear-button {
   margin-right: auto;
+}
+
+/* Unlock-all-lectures toggle */
+.schedule-unlock-panel {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  background: rgba(255, 255, 255, 0.97);
+  border-radius: 20px;
+  padding: 1rem 1.5rem;
+  margin-bottom: 1.5rem;
+  color: #1f2937;
+}
+
+.schedule-unlock-hint {
+  margin: 0.25rem 0 0;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.schedule-date-ignored {
+  text-decoration: line-through;
+  color: #9ca3af;
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+  width: 46px;
+  height: 26px;
+  margin-top: 2px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: #d1d5db;
+  border-radius: 26px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  left: 3px;
+  top: 3px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background: #10b981;
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(20px);
+}
+
+.toggle-switch input:disabled + .toggle-slider {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.toggle-switch input:focus-visible + .toggle-slider {
+  outline: 2px solid #1f2937;
+  outline-offset: 2px;
 }
 
 .quiz-validation-error {

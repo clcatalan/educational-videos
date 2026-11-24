@@ -5,7 +5,9 @@ function parseDay(availableOn) {
   return new Date(year, month - 1, day);
 }
 
-// Short explanation of why a lecture can't be watched today
+// Short explanation of why a lecture can't be watched today.
+// availableOn is the participant's next review day once they've taken the
+// quiz (reviewCount > 0), otherwise the admin's scheduled day.
 export function availabilityMessage(lecture) {
   if (lecture.available || !lecture.availableOn) return null;
 
@@ -19,7 +21,9 @@ export function availabilityMessage(lecture) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  return day !== today
+  if (lecture.reviewCount > 0) return `Next review on ${label}`;
+
+  return day > today
     ? `Watch on ${label}`
     : `No longer available (was ${label})`;
 }

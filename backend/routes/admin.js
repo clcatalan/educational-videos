@@ -69,6 +69,41 @@ router.get("/users", requireAdmin, async (req, res) => {
 });
 
 /*
+Whether every lecture is unlocked regardless of its scheduled date.
+When false, each lecture's available_on date is enforced.
+*/
+router.get("/settings/schedule", requireAdmin, async (req, res) => {
+  try {
+    const result = await db.query("SELECT all_lectures_unlocked FROM app_settings WHERE id = 1");
+    res.json({ allLecturesUnlocked: result.rows[0]?.all_lectures_unlocked ?? false });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to fetch schedule settings" });
+  }
+});
+
+router.put("/settings/schedule", requireAdmin, async (req, res) => {
+  const { allLecturesUnlocked } = req.body;
+
+  if (typeof allLecturesUnlocked !== "boolean") {
+    return res.status(400).json({ message: "allLecturesUnlocked must be a boolean" });
+  }
+
+  try {
+    const result = await db.query(
+      `INSERT INTO app_settings (id, all_lectures_unlocked) VALUES (1, $1)
+       ON CONFLICT (id) DO UPDATE SET all_lectures_unlocked = EXCLUDED.all_lectures_unlocked
+       RETURNING all_lectures_unlocked`,
+      [allLecturesUnlocked]
+    );
+    res.json({ allLecturesUnlocked: result.rows[0].all_lectures_unlocked });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to save schedule settings" });
+  }
+});
+
+/*
 Set the single day a lecture can be watched ("YYYY-MM-DD"), or null to
 make it watchable any day. Applies to every participant.
 */

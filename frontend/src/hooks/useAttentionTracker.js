@@ -93,6 +93,11 @@ const mean = (values) => (values.length ? values.reduce((a, b) => a + b, 0) / va
 function toSample(frames, videoTime) {
   const faces = frames.filter((f) => f.facePresent);
   const avg = (key) => mean(faces.map((f) => f[key]));
+  // Volume is read on every frame, face or not
+  const avgVolume = (key) => {
+    const value = mean(frames.map((f) => f[key]).filter(Number.isFinite));
+    return value === null ? null : Math.round(value * 10) / 10;
+  };
 
   return {
     videoTime,
@@ -103,15 +108,19 @@ function toSample(frames, videoTime) {
     blink: avg("blink"),
     lookH: avg("lookH"),
     lookV: avg("lookV"),
+    videoVolume: avgVolume("videoVolume"),
+    audioVolume: avgVolume("audioVolume"),
   };
 }
 
 /*
-status: idle -> requesting -> ready, or denied / error.
-Call start() from a user gesture, then setPlaying() from the player events.
+status: idle -> requesting -> ready -> finished, or denied / error.
+Call start() from a user gesture, then setPlaying() from the player events,
+and finish() when the video ends.
 getVideoTime() should return the current playback position in seconds.
+getVolumes() should return { videoVolume, audioVolume } as heard, 0-100.
 */
-export default function useAttentionTracker({ userId, lectureId, getVideoTime }) {
+export default function useAttentionTracker({ userId, lectureId, getVideoTime, getVolumes }) {
   const [status, setStatus] = useState("idle");
 
   const streamRef = useRef(null);
@@ -122,6 +131,8 @@ export default function useAttentionTracker({ userId, lectureId, getVideoTime })
   const sessionIdRef = useRef(null);
   const getVideoTimeRef = useRef(getVideoTime);
   getVideoTimeRef.current = getVideoTime;
+  const getVolumesRef = useRef(getVolumes);
+  getVolumesRef.current = getVolumes;
 
   const flush = useCallback(() => {
     const samples = pendingRef.current.splice(0);
@@ -189,6 +200,36 @@ export default function useAttentionTracker({ userId, lectureId, getVideoTime })
     }
   }, [stopCamera]);
 
+  /*
+  Video finished: stop tracking, turn the camera off and record the
+  session's attention score. The last samples go with the score request
+  so the score includes them.
+  */
+  const finish = useCallback(() => {
+    playingRef.current = false;
+    closeSample(MIN_FRAMES_PER_SAMPLE);
+    stopCamera();
+    setStatus("finished");
+
+    const samples = pendingRef.current.splice(0);
+    const sessionId = sessionIdRef.current;
+    // Watching again is a new viewing session with its own score
+    sessionIdRef.current = crypto.randomUUID();
+
+    if (!userId) return;
+
+    fetch(`/api/users/${userId}/attention-score`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ lectureId, sessionId, samples }),
+      keepalive: true,
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      })
+      .catch((err) => console.error("Error recording attention score:", err));
+  }, [userId, lectureId, closeSample, stopCamera]);
+
   const setPlaying = useCallback((playing) => {
     playingRef.current = playing;
 
@@ -210,8 +251,21 @@ export default function useAttentionTracker({ userId, lectureId, getVideoTime })
       if (!playingRef.current || !landmarker || !camera || camera.readyState < 2) return;
 
       const frame = readFrame(landmarker.detectForVideo(camera, performance.now()));
-      // A hidden tab means the lecture isn't on screen, whatever the face is doing
-      framesRef.current.push(document.hidden ? { ...frame, onScreen: false } : frame);
+
+      let volumes = {};
+      try {
+        volumes = getVolumesRef.current?.() ?? {};
+      } catch {
+        // The player may not be ready yet; volume is left out of this frame
+      }
+
+      framesRef.current.push({
+        ...frame,
+        // A hidden tab means the lecture isn't on screen, whatever the face is doing
+        onScreen: document.hidden ? false : frame.onScreen,
+        videoVolume: volumes.videoVolume,
+        audioVolume: volumes.audioVolume,
+      });
     }, FRAME_INTERVAL_MS);
 
     const sampleTimer = setInterval(() => {
@@ -248,5 +302,5 @@ export default function useAttentionTracker({ userId, lectureId, getVideoTime })
     };
   }, [lectureId, closeSample, flush, stopCamera]);
 
-  return { status, start, setPlaying };
+  return { status, start, setPlaying, finish };
 }
